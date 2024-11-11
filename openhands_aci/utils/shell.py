@@ -1,8 +1,8 @@
 import subprocess
 import time
 
-from .config import MAX_RESPONSE_LEN_CHAR
-from .results import maybe_truncate
+from ..editor.config import MAX_RESPONSE_LEN_CHAR
+from ..editor.results import maybe_truncate
 
 
 def run_shell_cmd(

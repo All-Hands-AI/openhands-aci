@@ -5,7 +5,7 @@ import pytest
 
 from openhands_aci.editor.config import MAX_RESPONSE_LEN_CHAR
 from openhands_aci.editor.prompts import CONTENT_TRUNCATED_NOTICE
-from openhands_aci.editor.shell import run_shell_cmd
+from openhands_aci.utils.shell import run_shell_cmd
 
 
 def test_run_shell_cmd_success():

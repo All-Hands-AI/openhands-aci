@@ -2,6 +2,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Literal, get_args
 
+from openhands_aci.utils.shell import run_shell_cmd
+
 from .config import SNIPPET_CONTEXT_WINDOW
 from .exceptions import (
     EditorToolParameterInvalidError,
@@ -9,7 +11,6 @@ from .exceptions import (
     ToolError,
 )
 from .results import CLIResult, ToolResult, maybe_truncate
-from .shell import run_shell_cmd
 
 Command = Literal[
     'view',
