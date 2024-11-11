@@ -27,6 +27,14 @@ def test_view_file(editor):
     assert '2\tThis file is for testing purposes.' in result.output
 
 
+def test_view_directory(editor):
+    editor, test_file = editor
+    result = editor(command='view', path=str(test_file.parent))
+    assert isinstance(result, CLIResult)
+    assert str(test_file.parent) in result.output
+    assert test_file.name in result.output
+
+
 def test_create_file(editor):
     editor, test_file = editor
     new_file = test_file.parent / 'new_file.txt'
@@ -56,8 +64,22 @@ def test_str_replace_error_multiple_occurrences(editor):
         editor(
             command='str_replace', path=str(test_file), old_str='test', new_str='sample'
         )
+    assert 'Multiple occurrences of old_str `test`' in str(exc_info.value.message)
 
-    assert 'Multiple occurrences of old_str `test`' in str(exc_info.value)
+
+def test_str_replace_nonexistent_string(editor):
+    editor, test_file = editor
+    with pytest.raises(ToolError) as exc_info:
+        editor(
+            command='str_replace',
+            path=str(test_file),
+            old_str='Non-existent Line',
+            new_str='New Line',
+        )
+    assert 'No replacement was performed' in str(exc_info)
+    assert f'old_str `Non-existent Line` did not appear verbatim in {test_file}' in str(
+        exc_info.value.message
+    )
 
 
 def test_insert(editor):
@@ -67,6 +89,21 @@ def test_insert(editor):
     )
     assert isinstance(result, CLIResult)
     assert 'Inserted line' in test_file.read_text()
+
+
+def test_insert_invalid_line(editor):
+    editor, test_file = editor
+    with pytest.raises(EditorToolParameterInvalidError) as exc_info:
+        editor(
+            command='insert',
+            path=str(test_file),
+            insert_line=10,
+            new_str='Invalid Insert',
+        )
+    assert 'Invalid `insert_line` parameter' in str(exc_info.value.message)
+    assert 'It should be within the range of lines of the file' in str(
+        exc_info.value.message
+    )
 
 
 def test_undo_edit(editor):
