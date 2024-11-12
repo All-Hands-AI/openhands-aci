@@ -39,9 +39,9 @@ class OHEditor:
 
     TOOL_NAME = 'oh_editor'
 
-    def __init__(self) -> None:
+    def __init__(self, enable_linting: bool = False):
         self._file_history: dict[Path, list[str]] = defaultdict(list)
-        self._linter = DefaultLinter()
+        self._linter = DefaultLinter() if enable_linting else None
 
     def __call__(
         self,
@@ -116,9 +116,6 @@ class OHEditor:
         # Save the content to history
         self._file_history[path].append(file_content)
 
-        # Run linting on the changes
-        lint_results = self._run_linting(file_content, new_file_content, path)
-
         # Create a snippet of the edited section
         replacement_line = file_content.split(old_str)[0].count('\n')
         start_line = max(0, replacement_line - SNIPPET_CONTEXT_WINDOW)
@@ -130,7 +127,12 @@ class OHEditor:
         success_message += self._make_output(
             snippet, f'a snippet of {path}', start_line + 1
         )
-        success_message += '\n' + lint_results + '\n'
+
+        if self._linter:  # Linting is enabled
+            # Run linting on the changes
+            lint_results = self._run_linting(file_content, new_file_content, path)
+            success_message += '\n' + lint_results + '\n'
+
         success_message += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
         return CLIResult(output=success_message)
 
@@ -247,16 +249,18 @@ class OHEditor:
         self.write_file(path, new_file_text)
         self._file_history[path].append(file_text)
 
-        # Run linting on the changes
-        lint_results = self._run_linting(file_text, new_file_text, path)
-
         success_message = f'The file {path} has been edited. '
         success_message += self._make_output(
             snippet,
             'a snippet of the edited file',
             max(1, insert_line - SNIPPET_CONTEXT_WINDOW + 1),
         )
-        success_message += '\n' + lint_results + '\n'
+
+        if self._linter:  # Linting is enabled
+            # Run linting on the changes
+            lint_results = self._run_linting(file_text, new_file_text, path)
+            success_message += '\n' + lint_results + '\n'
+
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
         return CLIResult(output=success_message)
 
@@ -356,6 +360,7 @@ class OHEditor:
             temp_new.write_text(new_content)
 
             # Run linting on the changes
+            assert self._linter is not None
             results = self._linter.lint_file_diff(str(temp_old), str(temp_new))
 
             if not results:

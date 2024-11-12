@@ -18,6 +18,15 @@ def editor(tmp_path):
     return editor, test_file
 
 
+@pytest.fixture
+def editor_with_linting(tmp_path):
+    editor = OHEditor(enable_linting=True)
+    # Set up a temporary directory with test files
+    test_file = tmp_path / 'test.txt'
+    test_file.write_text('This is a test file.\nThis file is for testing purposes.')
+    return editor, test_file
+
+
 def test_view_file(editor):
     editor, test_file = editor
     result = editor(command='view', path=str(test_file))
@@ -45,8 +54,31 @@ def test_create_file(editor):
     assert 'File created successfully' in result.output
 
 
-def test_str_replace(editor):
+def test_str_replace_no_linting(editor):
     editor, test_file = editor
+    result = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='test file',
+        new_str='sample file',
+    )
+    assert isinstance(result, CLIResult)
+
+    # Test str_replace command
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
+     1\tThis is a sample file.
+     2\tThis file is for testing purposes.
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
+    )
+
+    # Test that the file content has been updated
+    assert 'This is a sample file.' in test_file.read_text()
+
+
+def test_str_replace_with_linting(editor_with_linting):
+    editor, test_file = editor_with_linting
     result = editor(
         command='str_replace',
         path=str(test_file),
@@ -94,8 +126,26 @@ def test_str_replace_nonexistent_string(editor):
     )
 
 
-def test_insert(editor):
+def test_insert_no_linting(editor):
     editor, test_file = editor
+    result = editor(
+        command='insert', path=str(test_file), insert_line=1, new_str='Inserted line'
+    )
+    assert isinstance(result, CLIResult)
+    assert 'Inserted line' in test_file.read_text()
+    print(result.output)
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
+     1\tThis is a test file.
+     2\tInserted line
+     3\tThis file is for testing purposes.
+Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+    )
+
+
+def test_insert_with_linting(editor_with_linting):
+    editor, test_file = editor_with_linting
     result = editor(
         command='insert', path=str(test_file), insert_line=1, new_str='Inserted line'
     )
