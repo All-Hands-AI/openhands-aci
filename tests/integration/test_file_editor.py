@@ -18,15 +18,6 @@ def editor(tmp_path):
     return editor, test_file
 
 
-@pytest.fixture
-def editor_with_linting(tmp_path):
-    editor = OHEditor(enable_linting=True)
-    # Set up a temporary directory with test files
-    test_file = tmp_path / 'test.txt'
-    test_file.write_text('This is a test file.\nThis file is for testing purposes.')
-    return editor, test_file
-
-
 def test_view_file(editor):
     editor, test_file = editor
     result = editor(command='view', path=str(test_file))
@@ -77,13 +68,14 @@ Review the changes and make sure they are as expected. Edit the file again if ne
     assert 'This is a sample file.' in test_file.read_text()
 
 
-def test_str_replace_with_linting(editor_with_linting):
-    editor, test_file = editor_with_linting
+def test_str_replace_with_linting(editor):
+    editor, test_file = editor
     result = editor(
         command='str_replace',
         path=str(test_file),
         old_str='test file',
         new_str='sample file',
+        enable_linting=True,
     )
     assert isinstance(result, CLIResult)
 
@@ -144,10 +136,14 @@ Review the changes and make sure they are as expected (correct indentation, no d
     )
 
 
-def test_insert_with_linting(editor_with_linting):
-    editor, test_file = editor_with_linting
+def test_insert_with_linting(editor):
+    editor, test_file = editor
     result = editor(
-        command='insert', path=str(test_file), insert_line=1, new_str='Inserted line'
+        command='insert',
+        path=str(test_file),
+        insert_line=1,
+        new_str='Inserted line',
+        enable_linting=True,
     )
     assert isinstance(result, CLIResult)
     assert 'Inserted line' in test_file.read_text()

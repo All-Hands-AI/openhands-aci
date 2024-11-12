@@ -39,9 +39,9 @@ class OHEditor:
 
     TOOL_NAME = 'oh_editor'
 
-    def __init__(self, enable_linting: bool = False):
+    def __init__(self):
         self._file_history: dict[Path, list[str]] = defaultdict(list)
-        self._linter = DefaultLinter() if enable_linting else None
+        self._linter = DefaultLinter()
 
     def __call__(
         self,
@@ -53,6 +53,7 @@ class OHEditor:
         old_str: str | None = None,
         new_str: str | None = None,
         insert_line: int | None = None,
+        enable_linting: bool = False,
         **kwargs,
     ) -> ToolResult | CLIResult:
         _path = Path(path)
@@ -68,13 +69,13 @@ class OHEditor:
         elif command == 'str_replace':
             if not old_str:
                 raise EditorToolParameterMissingError(command, 'old_str')
-            return self.str_replace(_path, old_str, new_str)
+            return self.str_replace(_path, old_str, new_str, enable_linting)
         elif command == 'insert':
             if insert_line is None:
                 raise EditorToolParameterMissingError(command, 'insert_line')
             if not new_str:
                 raise EditorToolParameterMissingError(command, 'new_str')
-            return self.insert(_path, insert_line, new_str)
+            return self.insert(_path, insert_line, new_str, enable_linting)
         elif command == 'undo_edit':
             return self.undo_edit(_path)
 
@@ -82,7 +83,9 @@ class OHEditor:
             f'Unrecognized command {command}. The allowed commands for the {self.TOOL_NAME} tool are: {", ".join(get_args(Command))}'
         )
 
-    def str_replace(self, path: Path, old_str: str, new_str: str | None) -> CLIResult:
+    def str_replace(
+        self, path: Path, old_str: str, new_str: str | None, enable_linting: bool
+    ) -> CLIResult:
         """
         Implement the str_replace command, which replaces old_str with new_str in the file content.
         """
@@ -128,7 +131,7 @@ class OHEditor:
             snippet, f'a snippet of {path}', start_line + 1
         )
 
-        if self._linter:  # Linting is enabled
+        if enable_linting:
             # Run linting on the changes
             lint_results = self._run_linting(file_content, new_file_content, path)
             success_message += '\n' + lint_results + '\n'
@@ -208,7 +211,9 @@ class OHEditor:
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to write to {path}') from None
 
-    def insert(self, path: Path, insert_line: int, new_str: str) -> CLIResult:
+    def insert(
+        self, path: Path, insert_line: int, new_str: str, enable_linting: bool
+    ) -> CLIResult:
         """
         Implement the insert command, which inserts new_str at the specified line in the file content.
         """
@@ -256,7 +261,7 @@ class OHEditor:
             max(1, insert_line - SNIPPET_CONTEXT_WINDOW + 1),
         )
 
-        if self._linter:  # Linting is enabled
+        if enable_linting:
             # Run linting on the changes
             lint_results = self._run_linting(file_text, new_file_text, path)
             success_message += '\n' + lint_results + '\n'
@@ -360,7 +365,6 @@ class OHEditor:
             temp_new.write_text(new_content)
 
             # Run linting on the changes
-            assert self._linter is not None
             results = self._linter.lint_file_diff(str(temp_old), str(temp_new))
 
             if not results:
