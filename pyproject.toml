@@ -20,6 +20,8 @@ gitpython = "*"
 tree-sitter = "0.21.3"
 grep-ast = "0.3.3"
 diskcache = "^5.6.3"
+flake8 = "*"
+whatthepatch = "^1.0.6"
 
 
 [tool.poetry.group.dev.dependencies]
