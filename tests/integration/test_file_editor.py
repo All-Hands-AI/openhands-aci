@@ -115,10 +115,8 @@ def test_undo_edit(editor):
         old_str='test file',
         new_str='sample file',
     )
-    print(f'output: {result.output}')
     # Undo the edit
     result = editor(command='undo_edit', path=str(test_file))
-    print(result.output)
     assert isinstance(result, CLIResult)
     assert 'Last edit to' in result.output
     assert 'test file' in test_file.read_text()  # Original content restored

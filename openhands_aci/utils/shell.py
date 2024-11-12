@@ -1,16 +1,27 @@
+import os
 import subprocess
 import time
 
-from ..editor.config import MAX_RESPONSE_LEN_CHAR
-from ..editor.results import maybe_truncate
+from openhands_aci.editor.config import MAX_RESPONSE_LEN_CHAR
+from openhands_aci.editor.results import maybe_truncate
 
 
 def run_shell_cmd(
     cmd: str,
     timeout: float | None = 120.0,  # seconds
     truncate_after: int | None = MAX_RESPONSE_LEN_CHAR,
-):
-    """Run a shell command synchronously with a timeout."""
+) -> tuple[int, str, str]:
+    """Run a shell command synchronously with a timeout.
+
+    Args:
+        cmd: The shell command to run.
+        timeout: The maximum time to wait for the command to complete.
+        truncate_after: The maximum number of characters to return for stdout and stderr.
+
+    Returns:
+        A tuple containing the return code, stdout, and stderr.
+    """
+
     start_time = time.time()
 
     try:
@@ -31,3 +42,18 @@ def run_shell_cmd(
         raise TimeoutError(
             f"Command '{cmd}' timed out after {elapsed_time:.2f} seconds"
         )
+
+
+def check_tool_installed(tool_name: str) -> bool:
+    """Check if a tool is installed."""
+    try:
+        subprocess.run(
+            [tool_name, '--version'],
+            check=True,
+            cwd=os.getcwd(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False

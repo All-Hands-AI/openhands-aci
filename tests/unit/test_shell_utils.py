@@ -5,7 +5,7 @@ import pytest
 
 from openhands_aci.editor.config import MAX_RESPONSE_LEN_CHAR
 from openhands_aci.editor.prompts import CONTENT_TRUNCATED_NOTICE
-from openhands_aci.utils.shell import run_shell_cmd
+from openhands_aci.utils.shell import check_tool_installed, run_shell_cmd
 
 
 def test_run_shell_cmd_success():
@@ -45,3 +45,15 @@ def test_run_shell_cmd_truncation(mock_popen):
     assert returncode == 0
     assert len(stdout) <= MAX_RESPONSE_LEN_CHAR + len(CONTENT_TRUNCATED_NOTICE)
     assert len(stderr) <= MAX_RESPONSE_LEN_CHAR + len(CONTENT_TRUNCATED_NOTICE)
+
+
+def test_check_tool_installed_whoami():
+    """Test check_tool_installed returns True for an installed tool (whoami)."""
+    # 'python' is usually available if Python is installed
+    assert check_tool_installed('whoami') is True
+
+
+def test_check_tool_installed_nonexistent_tool():
+    """Test check_tool_installed returns False for a nonexistent tool."""
+    # Use a made-up tool name that is very unlikely to exist
+    assert check_tool_installed('nonexistent_tool_xyz') is False
