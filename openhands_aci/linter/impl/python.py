@@ -1,7 +1,9 @@
+from typing import List
+
 from openhands_aci.utils.logger import oh_aci_logger as logger
 from openhands_aci.utils.shell import run_shell_cmd
 
-from ..base import LintResult
+from ..base import BaseLinter, LintResult
 
 
 def python_compile_lint(fname: str) -> list[LintResult]:
@@ -68,3 +70,30 @@ def flake_lint(filepath: str) -> list[LintResult]:
                 )
             )
     return results
+
+
+class PythonLinter(BaseLinter):
+    @property
+    def supported_extensions(self) -> List[str]:
+        return ['.py']
+
+    def lint(self, file_path: str) -> list[LintResult]:
+        error = flake_lint(file_path)
+        if not error:
+            error = python_compile_lint(file_path)
+        return error
+
+    def compile_lint(self, file_path: str, code: str) -> List[LintResult]:
+        try:
+            compile(code, file_path, 'exec')
+            return []
+        except SyntaxError as e:
+            return [
+                LintResult(
+                    file=file_path,
+                    line=e.lineno,
+                    column=e.offset,
+                    message=str(e),
+                    rule='SyntaxError',
+                )
+            ]
