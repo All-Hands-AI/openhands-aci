@@ -1,7 +1,9 @@
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Literal, get_args
 
+from openhands_aci.linter import DefaultLinter
 from openhands_aci.utils.shell import run_shell_cmd
 
 from .config import SNIPPET_CONTEXT_WINDOW
@@ -39,6 +41,7 @@ class OHEditor:
 
     def __init__(self) -> None:
         self._file_history: dict[Path, list[str]] = defaultdict(list)
+        self._linter = DefaultLinter()
 
     def __call__(
         self,
@@ -113,6 +116,9 @@ class OHEditor:
         # Save the content to history
         self._file_history[path].append(file_content)
 
+        # Run linting on the changes
+        lint_results = self._run_linting(file_content, new_file_content, path)
+
         # Create a snippet of the edited section
         replacement_line = file_content.split(old_str)[0].count('\n')
         start_line = max(0, replacement_line - SNIPPET_CONTEXT_WINDOW)
@@ -120,12 +126,13 @@ class OHEditor:
         snippet = '\n'.join(new_file_content.split('\n')[start_line : end_line + 1])
 
         # Prepare the success message
-        success_msg = f'The file {path} has been edited. '
-        success_msg += self._make_output(
+        success_message = f'The file {path} has been edited. '
+        success_message += self._make_output(
             snippet, f'a snippet of {path}', start_line + 1
         )
-        success_msg += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
-        return CLIResult(output=success_msg)
+        success_message += '\n' + lint_results + '\n'
+        success_message += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
+        return CLIResult(output=success_message)
 
     def view(self, path: Path, view_range: list[int] | None = None) -> CLIResult:
         """
@@ -240,12 +247,16 @@ class OHEditor:
         self.write_file(path, new_file_text)
         self._file_history[path].append(file_text)
 
+        # Run linting on the changes
+        lint_results = self._run_linting(file_text, new_file_text, path)
+
         success_message = f'The file {path} has been edited. '
         success_message += self._make_output(
             snippet,
             'a snippet of the edited file',
             max(1, insert_line - SNIPPET_CONTEXT_WINDOW + 1),
         )
+        success_message += '\n' + lint_results + '\n'
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
         return CLIResult(output=success_message)
 
@@ -329,3 +340,31 @@ class OHEditor:
             + snippet_content
             + '\n'
         )
+
+    def _run_linting(self, old_content: str, new_content: str, path: Path) -> str:
+        """
+        Run linting on file changes and return formatted results.
+        """
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create paths with exact filenames in temp directory
+            temp_old = Path(temp_dir) / f'old.{path.name}'
+            temp_new = Path(temp_dir) / f'new.{path.name}'
+
+            # Write content to temporary files
+            temp_old.write_text(old_content)
+            temp_new.write_text(new_content)
+
+            # Run linting on the changes
+            results = self._linter.lint_file_diff(str(temp_old), str(temp_new))
+
+            if not results:
+                return 'No linting issues found in the changes.'
+
+            # Format results
+            output = ['Linting issues found in the changes:']
+            for result in results:
+                output.append(
+                    f'- Line {result.line}, Column {result.column}: {result.message}'
+                )
+            return '\n'.join(output) + '\n'

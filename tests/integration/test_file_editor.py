@@ -54,8 +54,20 @@ def test_str_replace(editor):
         new_str='sample file',
     )
     assert isinstance(result, CLIResult)
-    assert 'The file' in result.output
-    assert 'sample file' in test_file.read_text()
+
+    # Test str_replace command
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
+     1\tThis is a sample file.
+     2\tThis file is for testing purposes.
+
+No linting issues found in the changes.
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
+    )
+
+    # Test that the file content has been updated
+    assert 'This is a sample file.' in test_file.read_text()
 
 
 def test_str_replace_error_multiple_occurrences(editor):
@@ -89,6 +101,17 @@ def test_insert(editor):
     )
     assert isinstance(result, CLIResult)
     assert 'Inserted line' in test_file.read_text()
+    print(result.output)
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
+     1\tThis is a test file.
+     2\tInserted line
+     3\tThis file is for testing purposes.
+
+No linting issues found in the changes.
+Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+    )
 
 
 def test_insert_invalid_line(editor):
