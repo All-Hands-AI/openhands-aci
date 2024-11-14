@@ -210,6 +210,18 @@ def test_str_replace_missing_old_str(editor):
         editor(command='str_replace', path=str(test_file), new_str='sample')
 
 
+def test_str_replace_new_str_and_old_str_same(editor):
+    editor, test_file = editor
+    with pytest.raises(EditorToolParameterInvalidError) as exc_info:
+        editor(
+            command='str_replace',
+            path=str(test_file),
+            old_str='test file',
+            new_str='test file',
+        )
+    assert '`new_str` and `old_str` must be different.' in str(exc_info.value.message)
+
+
 def test_insert_missing_line_param(editor):
     editor, test_file = editor
     with pytest.raises(EditorToolParameterMissingError):

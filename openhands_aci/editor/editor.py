@@ -69,6 +69,12 @@ class OHEditor:
         elif command == 'str_replace':
             if not old_str:
                 raise EditorToolParameterMissingError(command, 'old_str')
+            if new_str == old_str:
+                raise EditorToolParameterInvalidError(
+                    'new_str',
+                    new_str,
+                    '`new_str` and `old_str` must be different.',
+                )
             return self.str_replace(_path, old_str, new_str, enable_linting)
         elif command == 'insert':
             if insert_line is None:
