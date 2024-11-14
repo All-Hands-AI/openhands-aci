@@ -73,7 +73,7 @@ class OHEditor:
                 raise EditorToolParameterInvalidError(
                     'new_str',
                     new_str,
-                    '`new_str` and `old_str` must be different.',
+                    'No replacement was performed. `new_str` and `old_str` must be different.',
                 )
             return self.str_replace(_path, old_str, new_str, enable_linting)
         elif command == 'insert':
