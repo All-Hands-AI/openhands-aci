@@ -19,7 +19,9 @@ Command = Literal[
     'create',
     'str_replace',
     'insert',
+    'delete',
     'undo_edit',
+    'move_code_block',
     # 'jump_to_definition', TODO:
     # 'find_references' TODO:
 ]
@@ -32,6 +34,7 @@ class OHEditor:
     - create
     - navigate
     - edit files
+    - refactor code
     The tool parameters are defined by Anthropic and are not editable.
 
     Original implementation: https://github.com/anthropics/anthropic-quickstarts/blob/main/computer-use-demo/computer_use_demo/tools/edit.py
@@ -48,8 +51,9 @@ class OHEditor:
         *,
         command: Command,
         path: str,
+        dst_path: str | None = None,
         file_text: str | None = None,
-        view_range: list[int] | None = None,
+        lines_range: list[int] | None = None,
         old_str: str | None = None,
         new_str: str | None = None,
         insert_line: int | None = None,
@@ -59,7 +63,7 @@ class OHEditor:
         _path = Path(path)
         self.validate_path(command, _path)
         if command == 'view':
-            return self.view(_path, view_range)
+            return self.view(_path, lines_range)
         elif command == 'create':
             if not file_text:
                 raise
@@ -82,6 +86,16 @@ class OHEditor:
             if not new_str:
                 raise EditorToolParameterMissingError(command, 'new_str')
             return self.insert(_path, insert_line, new_str, enable_linting)
+        elif command == 'delete':
+            return self.delete(_path, lines_range)
+        elif command == 'move_code_block':
+            if insert_line is None:
+                raise EditorToolParameterMissingError(command, 'insert_line')
+            if not dst_path:
+                raise EditorToolParameterMissingError(command, 'dst_path')
+            _dst_path = Path(dst_path)
+            self.validate_path(command, _dst_path)
+            return self.move_code_block(_path, lines_range, _dst_path, insert_line)
         elif command == 'undo_edit':
             return self.undo_edit(_path)
 
@@ -165,43 +179,18 @@ class OHEditor:
             return CLIResult(output=stdout, error=stderr)
 
         file_content = self.read_file(path)
-        start_line = 1
+        file_content_lines = file_content.split('\n')
+
         if not view_range:
+            start_line = 1
             return CLIResult(
                 output=self._make_output(file_content, str(path), start_line)
             )
 
-        if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                'It should be a list of two integers.',
-            )
-
-        file_content_lines = file_content.split('\n')
         num_lines = len(file_content_lines)
+        self._validate_range(view_range, num_lines)
+
         start_line, end_line = view_range
-        if start_line < 1 or start_line > num_lines:
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                f'Its first element `{start_line}` should be within the range of lines of the file: {[1, num_lines]}.',
-            )
-
-        if end_line > num_lines:
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                f'Its second element `{end_line}` should be smaller than the number of lines in the file: `{num_lines}`.',
-            )
-
-        if end_line != -1 and end_line < start_line:
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                f'Its second element `{end_line}` should be greater than or equal to the first element `{start_line}`.',
-            )
-
         if end_line == -1:
             file_content = '\n'.join(file_content_lines[start_line - 1 :])
         else:
@@ -275,6 +264,71 @@ class OHEditor:
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
         return CLIResult(output=success_message)
 
+    def delete(self, path: Path, lines_range: list[int] | None = None) -> CLIResult:
+        """
+        Deletes text content in file from the given range.
+        """
+        file_text = self.read_file(path).expandtabs()
+        file_text_lines = file_text.split('\n')
+        num_lines = len(file_text_lines)
+
+        if not lines_range:
+            lines_range = [0, num_lines - 1]  # Delete all lines
+
+        self._validate_range(lines_range, num_lines)
+
+        start_line, end_line = lines_range  # inclusive
+
+        new_file_text_lines = (
+            file_text_lines[:start_line] + file_text_lines[end_line + 1 :]
+        )
+        snippet_lines = (
+            file_text_lines[max(0, start_line - SNIPPET_CONTEXT_WINDOW) : start_line]
+            + file_text_lines[
+                end_line + 1 : min(num_lines, end_line + SNIPPET_CONTEXT_WINDOW)
+            ]
+        )
+        new_file_text = '\n'.join(new_file_text_lines)
+        snippet = '\n'.join(snippet_lines)
+
+        self.write_file(path, new_file_text)
+        self._file_history[path].append(file_text)
+
+        success_message = f'The file {path} has been edited. '
+        success_message += self._make_output(
+            snippet,
+            'a snippet of the edited file',
+            # max(1, start_line - SNIPPET_CONTEXT_WINDOW + 1),
+        )
+
+        success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
+        return CLIResult(output=success_message)
+
+    def move_code_block(
+        self, path: Path, from_range: list[int] | None, dst_path: Path, insert_line: int
+    ) -> CLIResult:
+        """
+        Move a block of code from one file to another.
+        """
+        file_content_lines = self.read_file(path).expandtabs().split('\n')
+        num_lines = len(file_content_lines)
+
+        if not from_range:
+            from_range = [0, num_lines - 1]  # Delete all lines
+
+        start_line, end_line = from_range
+        code_block = '\n'.join(
+            file_content_lines[start_line:]
+            if end_line == -1
+            else file_content_lines[start_line : end_line + 1]
+        )
+        delete_result = self.delete(path, from_range)
+        insert_result = self.insert(dst_path, insert_line, code_block, True)
+
+        return CLIResult(
+            output=f'Code block moved from {path} to {dst_path}.\n{delete_result.output}\n{insert_result.output}'
+        )
+
     def validate_path(self, command: Command, path: Path) -> None:
         """
         Check that the path/command combination is valid.
@@ -305,6 +359,37 @@ class OHEditor:
                 'path',
                 path,
                 f'The path {path} is a directory and only the `view` command can be used on directories.',
+            )
+
+    def _validate_range(self, lines_range: list[int], num_lines):
+        if len(lines_range) != 2 or not all(isinstance(i, int) for i in lines_range):
+            raise EditorToolParameterInvalidError(
+                'lines_range',
+                lines_range,
+                'It should be a list of two integers.',
+            )
+
+        start_line, end_line = lines_range
+
+        if start_line < 1 or start_line > num_lines:
+            raise EditorToolParameterInvalidError(
+                'lines_range',
+                lines_range,
+                f'Its first element `{start_line}` should be within the range of lines of the file: {[1, num_lines]}.',
+            )
+
+        if end_line > num_lines:
+            raise EditorToolParameterInvalidError(
+                'lines_range',
+                lines_range,
+                f'Its second element `{end_line}` should be smaller than the number of lines in the file: `{num_lines}`.',
+            )
+
+        if end_line != -1 and end_line < start_line:
+            raise EditorToolParameterInvalidError(
+                'lines_range',
+                lines_range,
+                f'Its second element `{end_line}` should be greater than or equal to the first element `{start_line}`.',
             )
 
     def undo_edit(self, path: Path) -> CLIResult:
