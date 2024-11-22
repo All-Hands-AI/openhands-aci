@@ -18,6 +18,15 @@ def editor(tmp_path):
     return editor, test_file
 
 
+@pytest.fixture
+def editor_python_file_with_tabs(tmp_path):
+    editor = OHEditor()
+    # Set up a temporary directory with test files
+    test_file = tmp_path / 'test.py'
+    test_file.write_text('def test():\n\tprint("Hello, World!")')
+    return editor, test_file
+
+
 def test_view_file(editor):
     editor, test_file = editor
     result = editor(command='view', path=str(test_file))
@@ -66,6 +75,45 @@ Review the changes and make sure they are as expected. Edit the file again if ne
 
     # Test that the file content has been updated
     assert 'This is a sample file.' in test_file.read_text()
+
+
+def test_str_replace_multi_line_no_linting(editor):
+    editor, test_file = editor
+    result = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='This is a test file.\nThis file is for testing purposes.',
+        new_str='This is a sample file.\nThis file is for testing purposes.',
+    )
+    assert isinstance(result, CLIResult)
+
+    # Test str_replace command
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
+     1\tThis is a sample file.
+     2\tThis file is for testing purposes.
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
+    )
+
+
+def test_str_replace_multi_line_with_tabs_no_linting(editor_python_file_with_tabs):
+    editor, test_file = editor_python_file_with_tabs
+    result = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='def test():\n\tprint("Hello, World!")',
+        new_str='def test():\n\tprint("Hello, Universe!")',
+    )
+    assert isinstance(result, CLIResult)
+
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
+     1\tdef test():
+     2\t{'\t'.expandtabs()}print("Hello, Universe!")
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
+    )
 
 
 def test_str_replace_with_linting(editor):

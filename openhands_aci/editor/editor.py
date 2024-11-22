@@ -95,7 +95,7 @@ class OHEditor:
         """
         Implement the str_replace command, which replaces old_str with new_str in the file content.
         """
-        file_content = self.read_file(path)
+        file_content = self.read_file(path).expandtabs()
         old_str = old_str.expandtabs()
         new_str = new_str.expandtabs() if new_str is not None else ''
 
