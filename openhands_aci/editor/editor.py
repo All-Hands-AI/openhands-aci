@@ -62,7 +62,7 @@ class OHEditor:
             return self.view(_path, view_range)
         elif command == 'create':
             if not file_text:
-                raise
+                raise EditorToolParameterMissingError(command, 'file_text')
             self.write_file(_path, file_text)
             self._file_history[_path].append(file_text)
             return FileModifyResult(
