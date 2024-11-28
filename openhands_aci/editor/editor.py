@@ -12,7 +12,7 @@ from .exceptions import (
     EditorToolParameterMissingError,
     ToolError,
 )
-from .results import CLIResult, FileModifyResult, ToolResult, maybe_truncate
+from .results import CLIResult, maybe_truncate
 
 Command = Literal[
     'view',
@@ -55,7 +55,7 @@ class OHEditor:
         insert_line: int | None = None,
         enable_linting: bool = False,
         **kwargs,
-    ) -> ToolResult | CLIResult | FileModifyResult:
+    ) -> CLIResult:
         _path = Path(path)
         self.validate_path(command, _path)
         if command == 'view':
@@ -65,7 +65,7 @@ class OHEditor:
                 raise EditorToolParameterMissingError(command, 'file_text')
             self.write_file(_path, file_text)
             self._file_history[_path].append(file_text)
-            return FileModifyResult(
+            return CLIResult(
                 path=str(_path),
                 prev_exist=False,
                 output=f'File created successfully at: {_path}',
@@ -147,7 +147,7 @@ class OHEditor:
             success_message += '\n' + lint_results + '\n'
 
         success_message += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
-        return FileModifyResult(
+        return CLIResult(
             output=success_message,
             prev_exist=True,
             path=str(path),
@@ -283,7 +283,7 @@ class OHEditor:
             success_message += '\n' + lint_results + '\n'
 
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
-        return FileModifyResult(
+        return CLIResult(
             output=success_message,
             prev_exist=True,
             path=str(path),

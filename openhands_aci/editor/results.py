@@ -27,11 +27,7 @@ class ToolResult:
 class CLIResult(ToolResult):
     """A ToolResult that can be rendered as a CLI output."""
 
-
-@dataclass
-class FileModifyResult(CLIResult):
-    """A ToolResult for file operations."""
-
+    # Opional fields for file editing commands
     path: str | None = None
     prev_exist: bool = True
     old_content: str | None = None
