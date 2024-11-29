@@ -43,12 +43,10 @@ class OHEditor:
 
     TOOL_NAME = 'oh_editor'
 
-    def __init__(self, workspace='./'):
-        workspace = str(Path(workspace).resolve())
-
+    def __init__(self):
         self._file_history: dict[Path, list[str]] = defaultdict(list)
         self._linter = DefaultLinter()
-        self._symbol_navigator = SymbolNavigator(root=workspace)
+        self._symbol_navigator = SymbolNavigator()
 
     def __call__(
         self,
@@ -307,17 +305,10 @@ class OHEditor:
         """
         Implement the jump_to_definition command.
         """
-        if path is None:
-            return CLIResult(
-                output=self._symbol_navigator.get_definitions_tree(symbol_name)
-            )
-        else:
-            rel_path_str = str(path.relative_to(self._symbol_navigator.root))
-            return CLIResult(
-                output=self._symbol_navigator.get_definitions_tree(
-                    symbol_name, rel_path_str
-                )
-            )
+        # FIXME: remove the path parameter from the method signature
+        return CLIResult(
+            output=self._symbol_navigator.get_definitions_tree(symbol_name)
+        )
 
     def find_references(self, symbol_name: str) -> ToolResult:
         """
@@ -493,7 +484,7 @@ def main():
     args = parser.parse_args()
 
     # Initialize the editor
-    editor = OHEditor(workspace=args.workspace)
+    editor = OHEditor()
 
     # Print welcome message and help
     print(f'OHEditor initialized with workspace: {args.workspace}')

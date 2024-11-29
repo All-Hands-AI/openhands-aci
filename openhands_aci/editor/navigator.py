@@ -1,5 +1,5 @@
+import os
 from collections import defaultdict
-from pathlib import Path
 
 from grep_ast import TreeContext
 from rapidfuzz import process
@@ -11,11 +11,7 @@ from openhands_aci.utils.path import PathUtils
 
 
 class SymbolNavigator:
-    def __init__(self, root='./', show_progress=False) -> None:
-        if not Path(root).is_absolute():
-            root = str(Path(root).resolve())
-
-        self.root = root
+    def __init__(self, show_progress=False) -> None:
         self.show_progress = show_progress
 
         # Lazy-initialized attributes
@@ -35,7 +31,9 @@ class SymbolNavigator:
         if self._git_repo_found:
             if self._git_utils is None:
                 try:
-                    self._git_utils = GitRepoUtils(self.root)
+                    self._git_utils = GitRepoUtils(
+                        os.getcwd()
+                    )  # pwd is set to the workspace automatically
                 except Exception:
                     self._git_repo_found = False
                     return None
@@ -45,13 +43,13 @@ class SymbolNavigator:
     @property
     def path_utils(self):
         if self._path_utils is None:
-            self._path_utils = PathUtils(self.root)
+            self._path_utils = PathUtils(os.getcwd())
         return self._path_utils
 
     @property
     def ts_parser(self):
         if self._ts_parser is None:
-            self._ts_parser = TreeSitterParser(self.root)
+            self._ts_parser = TreeSitterParser(os.getcwd())
         return self._ts_parser
 
     @property

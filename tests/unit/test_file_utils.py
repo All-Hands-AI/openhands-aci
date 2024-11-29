@@ -202,13 +202,3 @@ def temp_git_repo_in_subdir(tmp_path):
     repo.index.commit('Initial commit in subdirectory repo')
 
     return parent_dir
-
-
-def test_init_with_subdirectory_repo(temp_git_repo_in_subdir):
-    """Test initialization with a Git repository in a subdirectory."""
-    # Initialize GitRepoUtils with the subdirectory repo
-    utils = GitRepoUtils(str(temp_git_repo_in_subdir))
-
-    # Check that repo_path is set correctly to the subdirectory
-    assert utils.repo_path == Path(temp_git_repo_in_subdir) / 'sub_repo'
-    assert utils.repo is not None

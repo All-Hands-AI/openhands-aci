@@ -272,21 +272,15 @@ def test_jump_to_definition(editor, monkeypatch):
     )
 
     # Set the root path for SymbolNavigator to the test directory
+    import os
+
     from openhands_aci.editor.navigator import SymbolNavigator
 
-    editor._symbol_navigator = SymbolNavigator(root=str(test_file.parent))
+    os.chdir(test_file.parent)
+    editor._symbol_navigator = SymbolNavigator()
 
     # Test basic symbol definition lookup
     result = editor(command='jump_to_definition', path=None, symbol_name='TestSymbol')
-    assert isinstance(result, CLIResult)
-    assert 'Definition(s) of `TestSymbol`' in result.output
-    assert 'test_def.py' in result.output
-    assert 'class TestSymbol' in result.output
-
-    # Test with specific file path
-    result = editor(
-        command='jump_to_definition', path=str(test_py_file), symbol_name='TestSymbol'
-    )
     assert isinstance(result, CLIResult)
     assert (
         result.output
@@ -344,9 +338,12 @@ def test_find_references(editor, monkeypatch):
     )
 
     # Set the root path for SymbolNavigator to the test directory
+    import os
+
     from openhands_aci.editor.navigator import SymbolNavigator
 
-    editor._symbol_navigator = SymbolNavigator(root=str(test_file.parent))
+    os.chdir(test_file.parent)
+    editor._symbol_navigator = SymbolNavigator()
 
     # Test basic reference lookup
     result = editor(command='find_references', symbol_name='TestSymbol')
