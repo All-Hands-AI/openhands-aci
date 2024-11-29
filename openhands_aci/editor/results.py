@@ -27,7 +27,7 @@ class ToolResult:
 class CLIResult(ToolResult):
     """A ToolResult that can be rendered as a CLI output."""
 
-    # Opional fields for file editing commands
+    # Optional fields for file editing commands
     path: str | None = None
     prev_exist: bool = True
     old_content: str | None = None
