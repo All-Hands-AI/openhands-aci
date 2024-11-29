@@ -284,7 +284,7 @@ def test_jump_to_definition(editor, monkeypatch):
     assert isinstance(result, CLIResult)
     assert (
         result.output
-        == """
+        == """\
 Definition(s) of `TestSymbol`:
 test_def.py:
   1│class TestSymbol:
@@ -350,7 +350,7 @@ def test_find_references(editor, monkeypatch):
     assert isinstance(result, CLIResult)
     assert (
         result.output
-        == """
+        == """\
 References to `TestSymbol`:
 test_ref.py:
 ...⋮...

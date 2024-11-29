@@ -130,7 +130,7 @@ class SymbolNavigator:
 
         # Concatenate the definitions to another tree representation
         defs_repr = ''
-        defs_repr += f'\nDefinition(s) of `{symbol}`:\n'
+        defs_repr += f'Definition(s) of `{symbol}`:\n'
         # Sort the tags by file path and line number
         def_tags_list = list(def_tags)
         def_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
@@ -159,7 +159,7 @@ class SymbolNavigator:
 
         # Concatenate the direct references to another tree representation
         direct_refs_repr = ''
-        direct_refs_repr += f'\nReferences to `{symbol}`:\n'
+        direct_refs_repr += f'References to `{symbol}`:\n'
         # Sort the tags by file path and line number
         ref_tags_list = list(ref_tags)
         ref_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
