@@ -28,17 +28,20 @@ class SymbolNavigator:
     @property
     def git_utils(self):
         if self._git_repo_found is None:
-            if self._git_utils is None:
-                try:
-                    self._git_utils = GitRepoUtils(
-                        os.getcwd()
-                    )  # pwd is set to the workspace automatically
-                    self._git_repo_found = True
-                except Exception:
-                    self._git_repo_found = False
-                    return None
+            try:
+                self._git_utils = GitRepoUtils(
+                    os.getcwd()
+                )  # pwd is set to the workspace automatically
+                self._git_repo_found = True
+            except Exception:
+                self._git_repo_found = False
+                return None
+
             return self._git_utils
-        return None
+
+        if not self._git_repo_found:
+            return None
+        return self._git_utils
 
     @property
     def path_utils(self):
