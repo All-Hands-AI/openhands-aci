@@ -167,7 +167,10 @@ class OHEditor:
 
         success_message += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
         success_message += (
-            f'\n{NAVIGATION_TIPS}' if self._symbol_navigator.is_enabled else ''
+            self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+            + f'{NAVIGATION_TIPS}'
+            if self._symbol_navigator.is_enabled
+            else ''
         )
         return CLIResult(
             output=success_message,
@@ -201,7 +204,12 @@ class OHEditor:
         if not view_range:
             return CLIResult(
                 output=self._make_output(file_content, str(path), start_line)
-                + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else '')
+                + (
+                    self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                    + NAVIGATION_TIPS
+                    if self._symbol_navigator.is_enabled
+                    else ''
+                )
             )
 
         if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
@@ -239,9 +247,15 @@ class OHEditor:
             file_content = '\n'.join(file_content_lines[start_line - 1 :])
         else:
             file_content = '\n'.join(file_content_lines[start_line - 1 : end_line])
+
         return CLIResult(
             output=self._make_output(file_content, str(path), start_line)
-            + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else '')
+            + (
+                self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                + NAVIGATION_TIPS
+                if self._symbol_navigator.is_enabled
+                else ''
+            )
         )
 
     def write_file(self, path: Path, file_text: str) -> None:
@@ -310,7 +324,10 @@ class OHEditor:
 
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
         success_message += (
-            f'\n{NAVIGATION_TIPS}' if self._symbol_navigator.is_enabled else ''
+            self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+            + f'{NAVIGATION_TIPS}'
+            if self._symbol_navigator.is_enabled
+            else ''
         )
         return CLIResult(
             output=success_message,
