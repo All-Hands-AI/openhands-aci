@@ -29,18 +29,7 @@ class TreeSitterParser:
     TAGS_CACHE_DIR = '.oh_aci.cache.tags'
 
     def __init__(self, cache_root_dir: str) -> None:
-        self.load_tags_cache(cache_root_dir)
-
-    def load_tags_cache(self, abs_root_dir: str) -> None:
-        safe_path = str(Path(abs_root_dir).resolve()).replace('/', '_').lstrip('_')
-        cache_path = Path(tempfile.gettempdir()) / safe_path / self.TAGS_CACHE_DIR
-        try:
-            self.tags_cache = Cache(cache_path)
-        except Exception:
-            logger.warning(
-                f'Could not load tags cache from {cache_path}, try deleting cache directory.'
-            )
-            self.tags_cache = dict()
+        self._load_tags_cache(cache_root_dir)
 
     def get_tags_from_file(self, abs_path: str, rel_path: str) -> list[ParsedTag]:
         mtime = get_modified_time(abs_path)
@@ -49,12 +38,12 @@ class TreeSitterParser:
         if cache_val and cache_val.get('mtime') == mtime:
             return cache_val.get('data')
 
-        data = self.get_tags_raw(abs_path, rel_path)
+        data = self._get_tags_raw(abs_path, rel_path)
         # Update cache
         self.tags_cache[cache_key] = {'mtime': mtime, 'data': data}
         return data
 
-    def get_tags_raw(self, abs_path: str, rel_path: str) -> list[ParsedTag]:
+    def _get_tags_raw(self, abs_path: str, rel_path: str) -> list[ParsedTag]:
         lang = filename_to_lang(abs_path)
         if not lang:
             return []
@@ -136,3 +125,14 @@ class TreeSitterParser:
                 result_tags.append(tag)
 
         return result_tags
+
+    def _load_tags_cache(self, abs_root_dir: str) -> None:
+        safe_path = str(Path(abs_root_dir).resolve()).replace('/', '_').lstrip('_')
+        cache_path = Path(tempfile.gettempdir()) / safe_path / self.TAGS_CACHE_DIR
+        try:
+            self.tags_cache = Cache(cache_path)
+        except Exception:
+            logger.warning(
+                f'Could not load tags cache from {cache_path}, try deleting cache directory.'
+            )
+            self.tags_cache = dict()
