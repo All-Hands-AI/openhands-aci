@@ -4,7 +4,6 @@ import re
 import pytest
 
 from openhands_aci.editor import file_editor
-from openhands_aci.editor.prompts import NAVIGATION_TIPS
 
 
 @pytest.fixture
@@ -41,8 +40,7 @@ def test_file_editor_happy_path(temp_file):
         == f"""The file {temp_file} has been edited. Here's the result of running `cat -n` on a snippet of {temp_file}:
      1\tThis is a sample file.
      2\tThis file is for testing purposes.
-Review the changes and make sure they are as expected. Edit the file again if necessary.
-{NAVIGATION_TIPS}"""
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
     assert result_dict['path'] == temp_file
     assert result_dict['prev_exist'] is True

@@ -8,7 +8,6 @@ from openhands_aci.editor.exceptions import (
     EditorToolParameterMissingError,
     ToolError,
 )
-from openhands_aci.editor.prompts import NAVIGATION_TIPS
 from openhands_aci.editor.results import CLIResult, ToolResult
 
 
@@ -75,8 +74,7 @@ def test_str_replace_no_linting(editor):
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tThis is a sample file.
      2\tThis file is for testing purposes.
-Review the changes and make sure they are as expected. Edit the file again if necessary.
-{NAVIGATION_TIPS}"""
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
     # Test that the file content has been updated
@@ -99,8 +97,7 @@ def test_str_replace_multi_line_no_linting(editor):
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tThis is a sample file.
      2\tThis file is for testing purposes.
-Review the changes and make sure they are as expected. Edit the file again if necessary.
-{NAVIGATION_TIPS}"""
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
 
@@ -119,8 +116,7 @@ def test_str_replace_multi_line_with_tabs_no_linting(editor_python_file_with_tab
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tdef test():
      2\t{'\t'.expandtabs()}print("Hello, Universe!")
-Review the changes and make sure they are as expected. Edit the file again if necessary.
-{NAVIGATION_TIPS}"""
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
 
@@ -143,8 +139,7 @@ def test_str_replace_with_linting(editor):
      2\tThis file is for testing purposes.
 
 No linting issues found in the changes.
-Review the changes and make sure they are as expected. Edit the file again if necessary.
-{NAVIGATION_TIPS}"""
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
     # Test that the file content has been updated
@@ -189,8 +184,7 @@ def test_insert_no_linting(editor):
      1\tThis is a test file.
      2\tInserted line
      3\tThis file is for testing purposes.
-Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
-{NAVIGATION_TIPS}"""
+Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
     )
 
 
@@ -214,8 +208,7 @@ def test_insert_with_linting(editor):
      3\tThis file is for testing purposes.
 
 No linting issues found in the changes.
-Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
-{NAVIGATION_TIPS}"""
+Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
     )
 
 

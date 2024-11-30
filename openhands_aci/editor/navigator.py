@@ -19,9 +19,7 @@ class SymbolNavigator:
         self._git_utils: GitRepoUtils | None = None
         self._path_utils: PathUtils | None = None
         self._ts_parser: TreeSitterParser | None = None
-        self._git_repo_found = (
-            True  # Used to disable the 2 navigation commands if no git repo is found
-        )
+        self._git_repo_found: bool | None = None
 
         # Caching
         self.file_context_cache: dict = {}  # (rel_file) -> {'context': TreeContext_obj, 'mtime': mtime})
@@ -29,12 +27,13 @@ class SymbolNavigator:
 
     @property
     def git_utils(self):
-        if self._git_repo_found:
+        if self._git_repo_found is None:
             if self._git_utils is None:
                 try:
                     self._git_utils = GitRepoUtils(
                         os.getcwd()
                     )  # pwd is set to the workspace automatically
+                    self._git_repo_found = True
                 except Exception:
                     self._git_repo_found = False
                     return None
@@ -55,7 +54,7 @@ class SymbolNavigator:
 
     @property
     def is_enabled(self):
-        return self._git_repo_found
+        return bool(self._git_repo_found)
 
     def get_definitions_tree(
         self, symbol: str, rel_file_path: str | None = None, use_end_line=True
