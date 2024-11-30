@@ -54,6 +54,8 @@ class SymbolNavigator:
 
     @property
     def is_enabled(self):
+        if self._git_repo_found is None:
+            self.git_utils  # Initialize the git_utils
         return bool(self._git_repo_found)
 
     def get_definitions_tree(
