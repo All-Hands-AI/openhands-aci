@@ -56,7 +56,70 @@ class SymbolNavigator:
     def is_enabled(self):
         return self._git_repo_found
 
-    def get_parsed_tags(
+    def get_definitions_tree(
+        self, symbol: str, rel_file_path: str | None = None, use_end_line=True
+    ):
+        if not self.git_utils:
+            return 'No git repository found. Navigation commands are disabled. Please use bash commands instead.'
+
+        ident2defrels, _, identwrel2deftags, _ = self._get_parsed_tags()
+
+        # Extract definitions for the symbol
+        def_tags = set()
+        if symbol:
+            def_rels = ident2defrels.get(symbol, set())
+            for def_rel in def_rels:
+                if rel_file_path is not None and rel_file_path not in def_rel:
+                    continue
+                def_tags.update(identwrel2deftags.get((def_rel, symbol), set()))
+
+        if not def_tags:
+            # Perform a fuzzy search for the symbol
+            choices = list(ident2defrels.keys())
+            suggested_matches = process.extract(symbol, choices, limit=5)
+            return f"No definitions found for `{symbol}`. Maybe you meant one of these: {', '.join(match[0] for match in suggested_matches)}?"
+
+        # Concatenate the definitions to another tree representation
+        defs_repr = ''
+        defs_repr += f'Definition(s) of `{symbol}`:\n'
+        # Sort the tags by file path and line number
+        def_tags_list = list(def_tags)
+        def_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
+        defs_repr += self._tag_list_to_tree(def_tags_list, use_end_line=use_end_line)
+        defs_repr += '\n'
+
+        return defs_repr
+
+    def get_references_tree(self, symbol: str):
+        if not self.git_utils:
+            return 'No git repository found. Navigation commands are disabled. Please use bash commands instead.'
+
+        _, ident2refrels, _, identwrel2reftags = self._get_parsed_tags()
+
+        # Extract references for the symbol
+        ref_tags = set()
+        ref_rels = ident2refrels.get(symbol, set())
+        for ref_rel in ref_rels:
+            ref_tags.update(identwrel2reftags.get((ref_rel, symbol), set()))
+
+        if not ref_tags:
+            # Perform a fuzzy search for the symbol
+            choices = list(ident2refrels.keys())
+            suggested_matches = process.extract(symbol, choices, limit=5)
+            return f"No references found for `{symbol}`. Maybe you meant one of these: {', '.join(match[0] for match in suggested_matches)}?"
+
+        # Concatenate the direct references to another tree representation
+        direct_refs_repr = ''
+        direct_refs_repr += f'References to `{symbol}`:\n'
+        # Sort the tags by file path and line number
+        ref_tags_list = list(ref_tags)
+        ref_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
+        direct_refs_repr += self._tag_list_to_tree(ref_tags_list, use_end_line=False)
+        direct_refs_repr += '\n'
+
+        return direct_refs_repr
+
+    def _get_parsed_tags(
         self,
         depth: int | None = None,
         rel_dir_path: str | None = None,
@@ -105,70 +168,7 @@ class SymbolNavigator:
 
         return ident2defrels, ident2refrels, identwrel2deftags, identwrel2reftags
 
-    def get_definitions_tree(
-        self, symbol: str, rel_file_path: str | None = None, use_end_line=True
-    ):
-        if not self.git_utils:
-            return 'No git repository found. Navigation commands are disabled. Please use bash commands instead.'
-
-        ident2defrels, _, identwrel2deftags, _ = self.get_parsed_tags()
-
-        # Extract definitions for the symbol
-        def_tags = set()
-        if symbol:
-            def_rels = ident2defrels.get(symbol, set())
-            for def_rel in def_rels:
-                if rel_file_path is not None and rel_file_path not in def_rel:
-                    continue
-                def_tags.update(identwrel2deftags.get((def_rel, symbol), set()))
-
-        if not def_tags:
-            # Perform a fuzzy search for the symbol
-            choices = list(ident2defrels.keys())
-            suggested_matches = process.extract(symbol, choices, limit=5)
-            return f"No definitions found for `{symbol}`. Maybe you meant one of these: {', '.join(match[0] for match in suggested_matches)}?"
-
-        # Concatenate the definitions to another tree representation
-        defs_repr = ''
-        defs_repr += f'Definition(s) of `{symbol}`:\n'
-        # Sort the tags by file path and line number
-        def_tags_list = list(def_tags)
-        def_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
-        defs_repr += self.tag_list_to_tree(def_tags_list, use_end_line=use_end_line)
-        defs_repr += '\n'
-
-        return defs_repr
-
-    def get_references_tree(self, symbol: str):
-        if not self.git_utils:
-            return 'No git repository found. Navigation commands are disabled. Please use bash commands instead.'
-
-        _, ident2refrels, _, identwrel2reftags = self.get_parsed_tags()
-
-        # Extract references for the symbol
-        ref_tags = set()
-        ref_rels = ident2refrels.get(symbol, set())
-        for ref_rel in ref_rels:
-            ref_tags.update(identwrel2reftags.get((ref_rel, symbol), set()))
-
-        if not ref_tags:
-            # Perform a fuzzy search for the symbol
-            choices = list(ident2refrels.keys())
-            suggested_matches = process.extract(symbol, choices, limit=5)
-            return f"No references found for `{symbol}`. Maybe you meant one of these: {', '.join(match[0] for match in suggested_matches)}?"
-
-        # Concatenate the direct references to another tree representation
-        direct_refs_repr = ''
-        direct_refs_repr += f'References to `{symbol}`:\n'
-        # Sort the tags by file path and line number
-        ref_tags_list = list(ref_tags)
-        ref_tags_list.sort(key=lambda tag: (tag.rel_path, tag.start_line))
-        direct_refs_repr += self.tag_list_to_tree(ref_tags_list, use_end_line=False)
-        direct_refs_repr += '\n'
-
-        return direct_refs_repr
-
-    def tag_list_to_tree(self, tags: list[ParsedTag], use_end_line=False) -> str:
+    def _tag_list_to_tree(self, tags: list[ParsedTag], use_end_line=False) -> str:
         if not tags:
             return ''
 
@@ -188,7 +188,7 @@ class SymbolNavigator:
             if tag.rel_path != cur_rel_file:
                 if lois:
                     output += cur_rel_file + ':\n'
-                    output += self.render_tree(cur_abs_file, cur_rel_file, lois)
+                    output += self._render_tree(cur_abs_file, cur_rel_file, lois)
                     lois = []
                 elif cur_rel_file:  # No line of interest
                     output += '\n' + cur_rel_file + ':\n'
@@ -206,7 +206,7 @@ class SymbolNavigator:
         output = '\n'.join(line[:150] for line in output.splitlines())
         return output
 
-    def render_tree(self, abs_file: str, rel_file: str, lois: list) -> str:
+    def _render_tree(self, abs_file: str, rel_file: str, lois: list) -> str:
         mtime = get_modified_time(abs_file)
         tree_cache_key = (rel_file, tuple(sorted(lois)), mtime)
         if tree_cache_key in self.rendered_tree_cache:
