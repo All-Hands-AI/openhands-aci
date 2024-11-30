@@ -16,7 +16,7 @@ from .exceptions import (
 )
 from .navigator import SymbolNavigator
 from .prompts import NAVIGATION_TIPS
-from .results import CLIResult, ToolResult, maybe_truncate
+from .results import CLIResult, maybe_truncate
 
 Command = Literal[
     'view',
@@ -61,7 +61,10 @@ class OHEditor:
         symbol_name: str | None = None,
         enable_linting: bool = False,
         **kwargs,
-    ) -> ToolResult | CLIResult:
+    ) -> CLIResult:
+        if path is None and command not in ['jump_to_definition', 'find_references']:
+            raise EditorToolParameterMissingError(command, 'path')
+
         if path is not None:
             _path = Path(path)
             self.validate_path(command, _path)
@@ -70,10 +73,14 @@ class OHEditor:
             return self.view(_path, view_range)
         elif command == 'create':
             if not file_text:
-                raise
+                raise EditorToolParameterMissingError(command, 'file_text')
             self.write_file(_path, file_text)
             self._file_history[_path].append(file_text)
-            return ToolResult(output=f'File created successfully at: {_path}')
+            return CLIResult(
+                path=str(_path),
+                prev_exist=False,
+                output=f'File created successfully at: {_path}',
+            )
         elif command == 'str_replace':
             if not old_str:
                 raise EditorToolParameterMissingError(command, 'old_str')
@@ -162,7 +169,13 @@ class OHEditor:
         success_message += (
             f'\n{NAVIGATION_TIPS}' if self._symbol_navigator.is_enabled else ''
         )
-        return CLIResult(output=success_message)
+        return CLIResult(
+            output=success_message,
+            prev_exist=True,
+            path=str(path),
+            old_content=file_content,
+            new_content=new_file_content,
+        )
 
     def view(self, path: Path, view_range: list[int] | None = None) -> CLIResult:
         """
@@ -299,9 +312,15 @@ class OHEditor:
         success_message += (
             f'\n{NAVIGATION_TIPS}' if self._symbol_navigator.is_enabled else ''
         )
-        return CLIResult(output=success_message)
+        return CLIResult(
+            output=success_message,
+            prev_exist=True,
+            path=str(path),
+            old_content=file_text,
+            new_content=new_file_text,
+        )
 
-    def jump_to_definition(self, path: Path | None, symbol_name: str) -> ToolResult:
+    def jump_to_definition(self, path: Path | None, symbol_name: str) -> CLIResult:
         """
         Implement the jump_to_definition command.
         """
@@ -310,7 +329,7 @@ class OHEditor:
             output=self._symbol_navigator.get_definitions_tree(symbol_name)
         )
 
-    def find_references(self, symbol_name: str) -> ToolResult:
+    def find_references(self, symbol_name: str) -> CLIResult:
         """
         Implement the find_references command.
         """

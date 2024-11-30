@@ -1,3 +1,5 @@
+import json
+
 from .editor import Command, OHEditor
 from .exceptions import ToolError
 from .results import ToolResult
@@ -40,4 +42,7 @@ def file_editor(
     except ToolError as e:
         return _make_api_tool_result(ToolResult(error=e.message))
 
-    return _make_api_tool_result(result)
+    formatted_output_and_error = _make_api_tool_result(result)
+    return f"""<oh_aci_output>
+{json.dumps(result.to_dict(extra_field={'formatted_output_and_error': formatted_output_and_error}), indent=2)}
+</oh_aci_output>"""
