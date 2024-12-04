@@ -129,17 +129,12 @@ class OHEditor:
                 f'No replacement was performed, old_str `{old_str}` did not appear verbatim in {path}.'
             )
         if occurrences > 1:
-            # Find starting line numbers for each occurrence
-            line_numbers = []
-            start_idx = 0
-            while True:
-                idx = file_content.find(old_str, start_idx)
-                if idx == -1:
-                    break
-                # Count newlines before this occurrence to get the line number
-                line_num = file_content.count('\n', 0, idx) + 1
-                line_numbers.append(line_num)
-                start_idx = idx + 1
+            file_content_lines = file_content.split('\n')
+            line_numbers = [
+                idx + 1
+                for idx, line in enumerate(file_content_lines)
+                if old_str in line
+            ]
             raise ToolError(
                 f'No replacement was performed. Multiple occurrences of old_str `{old_str}` in lines {line_numbers}. Please ensure it is unique.'
             )

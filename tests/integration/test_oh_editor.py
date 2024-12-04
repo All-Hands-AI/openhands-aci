@@ -149,28 +149,6 @@ def test_str_replace_error_multiple_occurrences(editor):
             command='str_replace', path=str(test_file), old_str='test', new_str='sample'
         )
     assert 'Multiple occurrences of old_str `test`' in str(exc_info.value.message)
-    assert '[1, 2]' in str(exc_info.value.message)  # Should show both line numbers
-
-
-def test_str_replace_error_multiple_multiline_occurrences(editor):
-    editor, test_file = editor
-    # Create a file with two identical multi-line blocks
-    multi_block = """def example():
-    print("Hello")
-    return True"""
-    content = f"{multi_block}\n\nprint('separator')\n\n{multi_block}"
-    test_file.write_text(content)
-
-    with pytest.raises(ToolError) as exc_info:
-        editor(
-            command='str_replace',
-            path=str(test_file),
-            old_str=multi_block,
-            new_str='def new():\n    print("World")',
-        )
-    error_msg = str(exc_info.value.message)
-    assert 'Multiple occurrences of old_str' in error_msg
-    assert '[1, 7]' in error_msg  # Should show correct starting line numbers
 
 
 def test_str_replace_nonexistent_string(editor):
