@@ -166,9 +166,6 @@ class OHEditor:
             success_message += '\n' + lint_results + '\n'
 
         success_message += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
-        success_message += (
-            f'\n{NAVIGATION_TIPS}' if self._symbol_navigator.is_enabled else ''
-        )
         return CLIResult(
             output=success_message,
             prev_exist=True,
@@ -309,9 +306,6 @@ class OHEditor:
             success_message += '\n' + lint_results + '\n'
 
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
-        success_message += (
-            f'\n{NAVIGATION_TIPS}' if self._symbol_navigator.is_enabled else ''
-        )
         return CLIResult(
             output=success_message,
             prev_exist=True,
