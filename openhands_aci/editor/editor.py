@@ -189,18 +189,21 @@ class OHEditor:
             _, stdout, stderr = run_shell_cmd(
                 rf"find {path} -maxdepth 2 -not -path '*/\.*'"
             )
-            all_abs_paths_list = stdout.split('\n')
-            abs_path_to_skeleton = self._symbol_navigator.get_skeletons(
-                all_abs_paths_list
-            )
-            stdout = '\n'.join(
-                [
-                    f'{abs_path}{'\n' + abs_path_to_skeleton[abs_path] if abs_path in abs_path_to_skeleton else ''}'
-                    for abs_path in all_abs_paths_list
-                ]
-            )
             if not stderr:
-                stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
+                if self._symbol_navigator.is_enabled:
+                    all_abs_paths_list = stdout.split('\n')
+                    abs_path_to_skeleton = self._symbol_navigator.get_skeletons(
+                        all_abs_paths_list
+                    )
+                    stdout = '\n'.join(
+                        [
+                            f'{abs_path}{'\n' + abs_path_to_skeleton[abs_path] if abs_path in abs_path_to_skeleton else ''}'
+                            for abs_path in all_abs_paths_list
+                        ]
+                    )
+                    stdout = f"Here's the files with its skeleton (i.e., class, function/method signatures) and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
+                else:
+                    stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
             return CLIResult(output=stdout, error=stderr)
 
         file_content = self.read_file(path)
