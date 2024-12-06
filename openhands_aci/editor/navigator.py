@@ -174,7 +174,7 @@ class SymbolNavigator:
         in_files_w_idents = group_files_with_idents(in_files_w_idents)
 
         if len(out_files_w_idents) > 0:
-            suggestion_out = '\nFiles that this file uses:\n'
+            suggestion_out = '\nFiles Used By This File:\n'
             for file, ident in out_files_w_idents:
                 if file == rel_file_path:
                     continue
@@ -183,7 +183,7 @@ class SymbolNavigator:
             suggestion_out = ''
 
         if len(in_files_w_idents) > 0:
-            suggestion_in = '\nFiles that refer to this file:\n'
+            suggestion_in = '\nFiles Referencing This File:\n'
             for file, ident in in_files_w_idents:
                 if file == rel_file_path:
                     continue
