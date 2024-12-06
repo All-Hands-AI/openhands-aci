@@ -23,7 +23,7 @@ class SymbolNavigator:
 
         # Caching
         self.file_context_cache: dict = {}  # (rel_file) -> {'context': TreeContext_obj, 'mtime': mtime})
-        self.rendered_tree_cache: dict = {}  # (rel_file, lois, mtime) -> rendered_tree
+        self.rendered_tree_cache: dict = {}  # (rel_file, lines_of_interest, mtime) -> rendered_tree
 
     @property
     def git_utils(self):
@@ -289,7 +289,7 @@ class SymbolNavigator:
             return ''
 
         cur_rel_file, cur_abs_file = '', ''
-        lois: list[int] = []
+        lines_of_interest: list[int] = []
         output = ''
 
         dummy_tag = ParsedTag(
@@ -302,17 +302,19 @@ class SymbolNavigator:
         )
         for tag in tags + [dummy_tag]:  # Add dummy tag to trigger last file output
             if tag.rel_path != cur_rel_file:
-                if lois:
+                if lines_of_interest:
                     output += cur_rel_file + ':\n' if prepend_file_name else ''
-                    output += self._render_tree(cur_abs_file, cur_rel_file, lois)
-                    lois = []
+                    output += self._render_tree(
+                        cur_abs_file, cur_rel_file, lines_of_interest
+                    )
+                    lines_of_interest = []
                 elif cur_rel_file:  # No line of interest
                     output += '\n' + cur_rel_file + ':\n'
 
                 cur_abs_file = tag.abs_path
                 cur_rel_file = tag.rel_path
 
-            lois += (
+            lines_of_interest += (
                 list(range(tag.start_line, tag.end_line + 1))
                 if use_end_line
                 else [tag.start_line]
@@ -322,9 +324,11 @@ class SymbolNavigator:
         output = '\n'.join(line[:150] for line in output.splitlines())
         return output
 
-    def _render_tree(self, abs_file: str, rel_file: str, lois: list) -> str:
+    def _render_tree(
+        self, abs_file: str, rel_file: str, lines_of_interest: list
+    ) -> str:
         mtime = get_modified_time(abs_file)
-        tree_cache_key = (rel_file, tuple(sorted(lois)), mtime)
+        tree_cache_key = (rel_file, tuple(sorted(lines_of_interest)), mtime)
         if tree_cache_key in self.rendered_tree_cache:
             return self.rendered_tree_cache[tree_cache_key]
 
@@ -354,7 +358,7 @@ class SymbolNavigator:
             context = self.file_context_cache[rel_file]['context']
 
         context.lines_of_interest = set()
-        context.add_lines_of_interest(lois)
+        context.add_lines_of_interest(lines_of_interest)
         context.add_context()
         res = context.format()
         self.rendered_tree_cache[tree_cache_key] = res
