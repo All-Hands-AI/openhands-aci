@@ -1,6 +1,7 @@
 import os
-from collections import defaultdict
+from collections import Counter, defaultdict
 
+import networkx as nx
 from grep_ast import TreeContext
 from rapidfuzz import process
 from tqdm import tqdm
@@ -141,6 +142,97 @@ class SymbolNavigator:
 
         return direct_refs_repr
 
+    def get_out_and_in_edges_suggestion(self, abs_file_path: str) -> str:
+        rel_file_path = self.path_utils.get_relative_path_str(abs_file_path)
+        conn_graph = self._get_connections_network()
+
+        # Out-edges with identifiers
+        out_edges = [
+            (target, data['identifier'])
+            for _, target, data in conn_graph.out_edges(rel_file_path, data=True)
+        ]
+
+        # In-edges with identifiers
+        in_edges = [
+            (source, data['identifier'])
+            for source, _, data in conn_graph.in_edges(rel_file_path, data=True)
+        ]
+
+        out_files_w_idents, in_files_w_idents = (
+            list(set(out_edges)),
+            list(set(in_edges)),
+        )
+
+        # Reduce items that have the same file name
+        def group_files_with_idents(files_with_idents):
+            grouped = defaultdict(set)
+            for file, ident in files_with_idents:
+                grouped[file].add(ident)
+            return [(file, ', '.join(idents)) for file, idents in grouped.items()]
+
+        out_files_w_idents = group_files_with_idents(out_files_w_idents)
+        in_files_w_idents = group_files_with_idents(in_files_w_idents)
+
+        if len(out_files_w_idents) > 0:
+            suggestion_out = '\nFiles that this file uses:\n'
+            for file, ident in out_files_w_idents:
+                if file == rel_file_path:
+                    continue
+                suggestion_out += f'- {file} (via {ident})\n'
+        else:
+            suggestion_out = ''
+
+        if len(in_files_w_idents) > 0:
+            suggestion_in = '\nFiles that refer to this file:\n'
+            for file, ident in in_files_w_idents:
+                if file == rel_file_path:
+                    continue
+                suggestion_in += f'- {file} (via {ident})\n'
+        else:
+            suggestion_in = ''
+
+        return suggestion_out + suggestion_in
+
+    def get_skeletons(self, all_abs_paths: list[str]) -> dict[str, str]:
+        all_abs_tracked_files = self.git_utils.get_all_absolute_tracked_files()
+
+        # Filter out the files that are tracked by the git repo
+        all_abs_paths = list(
+            set(all_abs_paths).intersection(set(all_abs_tracked_files))
+        )
+
+        abs_path_to_tree_repr = {}
+
+        for abs_path in all_abs_paths:
+            rel_path = self.path_utils.get_relative_path_str(abs_path)
+            parsed_tags = self.ts_parser.get_tags_from_file(abs_path, rel_path)
+            def_tags = [tag for tag in parsed_tags if tag.tag_kind == TagKind.DEF]
+
+            abs_path_to_tree_repr[abs_path] = self._tag_list_to_tree(
+                def_tags, use_end_line=False, prepend_file_name=False
+            )
+
+        return abs_path_to_tree_repr
+
+    def _get_connections_network(self) -> nx.MultiDiGraph:
+        ident2defrels, ident2refrels, _, _ = self._get_parsed_tags()
+
+        all_idents = set(ident2defrels.keys()).intersection(set(ident2refrels.keys()))
+
+        G = nx.MultiDiGraph()
+        for ident in all_idents:
+            defining_rel_files = ident2defrels[ident]
+
+            for referencing_rel_file, num_refs in Counter(ident2refrels[ident]).items():
+                for defining_rel_file in defining_rel_files:
+                    G.add_edge(
+                        referencing_rel_file,
+                        defining_rel_file,
+                        weight=num_refs,
+                        identifier=f'`{ident}`',
+                    )
+        return G
+
     def _get_parsed_tags(
         self,
         depth: int | None = None,
@@ -190,7 +282,9 @@ class SymbolNavigator:
 
         return ident2defrels, ident2refrels, identwrel2deftags, identwrel2reftags
 
-    def _tag_list_to_tree(self, tags: list[ParsedTag], use_end_line=False) -> str:
+    def _tag_list_to_tree(
+        self, tags: list[ParsedTag], use_end_line=False, prepend_file_name=True
+    ) -> str:
         if not tags:
             return ''
 
@@ -209,7 +303,7 @@ class SymbolNavigator:
         for tag in tags + [dummy_tag]:  # Add dummy tag to trigger last file output
             if tag.rel_path != cur_rel_file:
                 if lois:
-                    output += cur_rel_file + ':\n'
+                    output += cur_rel_file + ':\n' if prepend_file_name else ''
                     output += self._render_tree(cur_abs_file, cur_rel_file, lois)
                     lois = []
                 elif cur_rel_file:  # No line of interest

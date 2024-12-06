@@ -195,7 +195,20 @@ class OHEditor:
                 rf"find {path} -maxdepth 2 -not -path '*/\.*'"
             )
             if not stderr:
-                stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
+                if self._symbol_navigator.is_enabled:
+                    all_abs_paths_list = stdout.split('\n')
+                    abs_path_to_skeleton = self._symbol_navigator.get_skeletons(
+                        all_abs_paths_list
+                    )
+                    stdout = '\n'.join(
+                        [
+                            f'{abs_path}{'\n' + abs_path_to_skeleton[abs_path] if abs_path in abs_path_to_skeleton else ''}'
+                            for abs_path in all_abs_paths_list
+                        ]
+                    )
+                    stdout = f"Here's the files with its skeleton (i.e., class, function/method signatures) and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
+                else:
+                    stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
             return CLIResult(output=stdout, error=stderr)
 
         file_content = self.read_file(path)
@@ -203,7 +216,12 @@ class OHEditor:
         if not view_range:
             return CLIResult(
                 output=self._make_output(file_content, str(path), start_line)
-                + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else '')
+                + (
+                    self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                    + NAVIGATION_TIPS
+                    if self._symbol_navigator.is_enabled
+                    else ''
+                )
             )
 
         if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
@@ -241,9 +259,15 @@ class OHEditor:
             file_content = '\n'.join(file_content_lines[start_line - 1 :])
         else:
             file_content = '\n'.join(file_content_lines[start_line - 1 : end_line])
+
         return CLIResult(
             output=self._make_output(file_content, str(path), start_line)
-            + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else '')
+            + (
+                self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                + NAVIGATION_TIPS
+                if self._symbol_navigator.is_enabled
+                else ''
+            )
         )
 
     def write_file(self, path: Path, file_text: str) -> None:
