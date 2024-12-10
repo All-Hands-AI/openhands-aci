@@ -29,7 +29,11 @@ def test_file_editor_happy_path(temp_file):
     )
 
     # Extract the JSON content using a regular expression
-    match = re.search(r'<oh_aci_output>(.*?)</oh_aci_output>', result, re.DOTALL)
+    match = re.search(
+        r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
+        result,
+        re.DOTALL,
+    )
     assert match, 'Output does not contain the expected <oh_aci_output> tags.'
     result_dict = json.loads(match.group(1))
 
