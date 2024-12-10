@@ -173,7 +173,7 @@ class OHEditor:
                 )
 
             _, stdout, stderr = run_shell_cmd(
-                rf"find {path} -maxdepth 2 -not -path '*/\.*'"
+                rf"find -L {path} -maxdepth 2 -not -path '*/\.*'"
             )
             if not stderr:
                 stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
