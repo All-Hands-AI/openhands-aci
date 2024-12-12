@@ -131,6 +131,13 @@ class SymbolNavigator:
         depth: int | None = None,
         rel_dir_path: str | None = None,
     ) -> tuple[dict, dict, dict, dict]:
+        """
+        Parse all tags in the tracked files and return the following dictionaries:
+        - ident2defrels: symbol identifier -> set of its definitions' relative file paths
+        - ident2refrels: symbol identifier -> list of its references' relative file paths
+        - identwrel2deftags: (symbol identifier, relative file) -> set of its DEF tags
+        - identwrel2reftags: (symbol identifier, relative file) -> set of its REF tags
+        """
         if rel_dir_path:
             all_abs_files = self.git_utils.get_absolute_tracked_files_in_directory(
                 rel_dir_path=rel_dir_path,
@@ -176,6 +183,9 @@ class SymbolNavigator:
         return ident2defrels, ident2refrels, identwrel2deftags, identwrel2reftags
 
     def _tag_list_to_tree(self, tags: list[ParsedTag], use_end_line=False) -> str:
+        """
+        Convert a list of ParsedTag objects to a tree str representation.
+        """
         if not tags:
             return ''
 
