@@ -28,11 +28,6 @@ class SymbolNavigator:
     def git_utils(self):
         if self._git_repo_found is None:
             pwd = os.getcwd()
-            if pwd == '/testbed':
-                # Symlink used in swe-bench evaluation
-                workspace_dir = '/workspace'
-                pwd = workspace_dir + '/' + os.listdir(workspace_dir)[0]
-
             try:
                 self._git_utils = GitRepoUtils(
                     pwd
@@ -52,11 +47,6 @@ class SymbolNavigator:
     def path_utils(self):
         if self._path_utils is None:
             pwd = os.getcwd()
-            if pwd == '/testbed':
-                # Symlink used in swe-bench evaluation
-                workspace_dir = '/workspace'
-                pwd = workspace_dir + '/' + os.listdir(workspace_dir)[0]
-
             self._path_utils = PathUtils(pwd)
         return self._path_utils
 
@@ -64,11 +54,6 @@ class SymbolNavigator:
     def ts_parser(self):
         if self._ts_parser is None:
             pwd = os.getcwd()
-            if pwd == '/testbed':
-                # Symlink used in swe-bench evaluation
-                workspace_dir = '/workspace'
-                pwd = workspace_dir + '/' + os.listdir(workspace_dir)[0]
-
             self._ts_parser = TreeSitterParser(pwd)
         return self._ts_parser
 
