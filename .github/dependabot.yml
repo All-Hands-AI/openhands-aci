@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      python-packages:
+        patterns:
+          - "*"
+    versioning-strategy: "lockfile-only"
+    allow:
+      - dependency-type: "all"
+    commit-message:
+      prefix: "⬆️"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automerge"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
