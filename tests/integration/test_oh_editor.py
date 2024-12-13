@@ -311,3 +311,33 @@ def test_undo_edit_no_history_error(editor):
     empty_file.write_text('')
     with pytest.raises(ToolError):
         editor(command='undo_edit', path=str(empty_file))
+
+
+def test_view_symlinked_directory(tmp_path):
+    editor = OHEditor()
+
+    # Create a directory with some test files
+    source_dir = tmp_path / 'source_dir'
+    source_dir.mkdir()
+    (source_dir / 'file1.txt').write_text('content1')
+    (source_dir / 'file2.txt').write_text('content2')
+
+    # Create a subdirectory with a file
+    subdir = source_dir / 'subdir'
+    subdir.mkdir()
+    (subdir / 'file3.txt').write_text('content3')
+
+    # Create a symlink to the directory
+    symlink_dir = tmp_path / 'symlink_dir'
+    symlink_dir.symlink_to(source_dir)
+
+    # View the symlinked directory
+    result = editor(command='view', path=str(symlink_dir))
+
+    # Verify that all files are listed through the symlink
+    assert isinstance(result, CLIResult)
+    assert str(symlink_dir) in result.output
+    assert 'file1.txt' in result.output
+    assert 'file2.txt' in result.output
+    assert 'subdir' in result.output
+    assert 'file3.txt' in result.output

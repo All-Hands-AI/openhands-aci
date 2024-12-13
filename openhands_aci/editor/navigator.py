@@ -29,11 +29,6 @@ class SymbolNavigator:
     def git_utils(self):
         if self._git_repo_found is None:
             pwd = os.getcwd()
-            if pwd == '/testbed':
-                # Symlink used in swe-bench evaluation
-                workspace_dir = '/workspace'
-                pwd = workspace_dir + '/' + os.listdir(workspace_dir)[0]
-
             try:
                 self._git_utils = GitRepoUtils(
                     pwd
@@ -53,11 +48,6 @@ class SymbolNavigator:
     def path_utils(self):
         if self._path_utils is None:
             pwd = os.getcwd()
-            if pwd == '/testbed':
-                # Symlink used in swe-bench evaluation
-                workspace_dir = '/workspace'
-                pwd = workspace_dir + '/' + os.listdir(workspace_dir)[0]
-
             self._path_utils = PathUtils(pwd)
         return self._path_utils
 
@@ -65,11 +55,6 @@ class SymbolNavigator:
     def ts_parser(self):
         if self._ts_parser is None:
             pwd = os.getcwd()
-            if pwd == '/testbed':
-                # Symlink used in swe-bench evaluation
-                workspace_dir = '/workspace'
-                pwd = workspace_dir + '/' + os.listdir(workspace_dir)[0]
-
             self._ts_parser = TreeSitterParser(pwd)
         return self._ts_parser
 
@@ -238,6 +223,13 @@ class SymbolNavigator:
         depth: int | None = None,
         rel_dir_path: str | None = None,
     ) -> tuple[dict, dict, dict, dict]:
+        """
+        Parse all tags in the tracked files and return the following dictionaries:
+        - ident2defrels: symbol identifier -> set of its definitions' relative file paths
+        - ident2refrels: symbol identifier -> list of its references' relative file paths
+        - identwrel2deftags: (symbol identifier, relative file) -> set of its DEF tags
+        - identwrel2reftags: (symbol identifier, relative file) -> set of its REF tags
+        """
         if rel_dir_path:
             all_abs_files = self.git_utils.get_absolute_tracked_files_in_directory(
                 rel_dir_path=rel_dir_path,
@@ -285,6 +277,9 @@ class SymbolNavigator:
     def _tag_list_to_tree(
         self, tags: list[ParsedTag], use_end_line=False, prepend_file_name=True
     ) -> str:
+        """
+        Convert a list of ParsedTag objects to a tree str representation.
+        """
         if not tags:
             return ''
 
@@ -303,7 +298,7 @@ class SymbolNavigator:
         for tag in tags + [dummy_tag]:  # Add dummy tag to trigger last file output
             if tag.rel_path != cur_rel_file:
                 if lines_of_interest:
-                    output += cur_rel_file + ':\n' if prepend_file_name else ''
+                    output += cur_rel_file + ':\n'
                     output += self._render_tree(
                         cur_abs_file, cur_rel_file, lines_of_interest
                     )

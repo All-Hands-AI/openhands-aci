@@ -192,7 +192,7 @@ class OHEditor:
                 )
 
             _, stdout, stderr = run_shell_cmd(
-                rf"find {path} -maxdepth 2 -not -path '*/\.*'"
+                rf"find -L {path} -maxdepth 2 -not -path '*/\.*'"
             )
             if not stderr:
                 if self._symbol_navigator.is_enabled:
@@ -209,7 +209,12 @@ class OHEditor:
                     stdout = f"Here's the files with its skeleton (i.e., class, function/method signatures) and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
                 else:
                     stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
-            return CLIResult(output=stdout, error=stderr)
+            return CLIResult(
+                output=stdout,
+                error=stderr,
+                path=str(path),
+                prev_exist=True,
+            )
 
         file_content = self.read_file(path)
         start_line = 1
@@ -221,7 +226,9 @@ class OHEditor:
                     + NAVIGATION_TIPS
                     if self._symbol_navigator.is_enabled
                     else ''
-                )
+                ),
+                path=str(path),
+                prev_exist=True,
             )
 
         if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
@@ -261,13 +268,15 @@ class OHEditor:
             file_content = '\n'.join(file_content_lines[start_line - 1 : end_line])
 
         return CLIResult(
+            path=str(path),
             output=self._make_output(file_content, str(path), start_line)
             + (
                 self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
                 + NAVIGATION_TIPS
                 if self._symbol_navigator.is_enabled
                 else ''
-            )
+            ),
+            prev_exist=True,
         )
 
     def write_file(self, path: Path, file_text: str) -> None:
@@ -397,11 +406,16 @@ class OHEditor:
         if not self._file_history[path]:
             raise ToolError(f'No edit history found for {path}.')
 
+        current_text = self.read_file(path).expandtabs()
         old_text = self._file_history[path].pop()
         self.write_file(path, old_text)
 
         return CLIResult(
-            output=f'Last edit to {path} undone successfully. {self._make_output(old_text, str(path))}'
+            output=f'Last edit to {path} undone successfully. {self._make_output(old_text, str(path))}',
+            path=str(path),
+            prev_exist=True,
+            old_content=current_text,
+            new_content=old_text,
         )
 
     def read_file(self, path: Path) -> str:

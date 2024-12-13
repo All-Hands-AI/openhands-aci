@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from .editor import Command, OHEditor
 from .exceptions import ToolError
@@ -43,6 +44,7 @@ def file_editor(
         return _make_api_tool_result(ToolResult(error=e.message))
 
     formatted_output_and_error = _make_api_tool_result(result)
-    return f"""<oh_aci_output>
+    marker_id = uuid.uuid4().hex
+    return f"""<oh_aci_output_{marker_id}>
 {json.dumps(result.to_dict(extra_field={'formatted_output_and_error': formatted_output_and_error}), indent=2)}
-</oh_aci_output>"""
+</oh_aci_output_{marker_id}>"""

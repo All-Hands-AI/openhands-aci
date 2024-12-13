@@ -32,8 +32,12 @@ def test_file_editor_happy_path(temp_file):
     )
 
     # Extract the JSON content using a regular expression
-    match = re.search(r'<oh_aci_output>(.*?)</oh_aci_output>', result, re.DOTALL)
-    assert match, 'Output does not contain the expected <oh_aci_output> tags.'
+    match = re.search(
+        r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
+        result,
+        re.DOTALL,
+    )
+    assert match, 'Output does not contain the expected <oh_aci_output_> tags in the correct format.'
     result_dict = json.loads(match.group(1))
 
     # Validate the formatted output in the result dictionary
@@ -60,3 +64,50 @@ Review the changes and make sure they are as expected. Edit the file again if ne
     with open(temp_file, 'r') as f:
         content = f.read()
     assert 'This is a sample file.' in content
+
+
+def test_file_editor_with_xml_tag_parsing(temp_file):
+    # Create content that includes the XML tag pattern
+    xml_content = """This is a file with XML tags parsing logic...
+match = re.search(
+    r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
+    result,
+    re.DOTALL,
+)
+...More text here.
+"""
+
+    with open(temp_file, 'w') as f:
+        f.write(xml_content)
+
+    result = file_editor(
+        command='view',
+        path=temp_file,
+    )
+
+    # Ensure the content is extracted correctly
+    match = re.search(
+        r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
+        result,
+        re.DOTALL,
+    )
+
+    assert match, 'Output does not contain the expected <oh_aci_output_> tags in the correct format.'
+    result_dict = json.loads(match.group(1))
+
+    # Validate the formatted output in the result dictionary
+    formatted_output = result_dict['formatted_output_and_error']
+    print(formatted_output)
+    assert (
+        formatted_output
+        == f"""Here's the result of running `cat -n` on {temp_file}:
+     1\tThis is a file with XML tags parsing logic...
+     2\tmatch = re.search(
+     3\t    r'<oh_aci_output_[0-9a-f]{{32}}>(.*?)</oh_aci_output_[0-9a-f]{{32}}>',
+     4\t    result,
+     5\t    re.DOTALL,
+     6\t)
+     7\t...More text here.
+     8\t
+"""
+    )
