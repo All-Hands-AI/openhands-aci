@@ -222,10 +222,8 @@ class OHEditor:
             return CLIResult(
                 output=self._make_output(file_content, str(path), start_line)
                 + (
-                    self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
-                    + NAVIGATION_TIPS
-                    if self._symbol_navigator.is_enabled
-                    else ''
+                    # self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                    NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''
                 ),
                 path=str(path),
                 prev_exist=True,
@@ -271,10 +269,8 @@ class OHEditor:
             path=str(path),
             output=self._make_output(file_content, str(path), start_line)
             + (
-                self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
-                + NAVIGATION_TIPS
-                if self._symbol_navigator.is_enabled
-                else ''
+                # self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''
             ),
             prev_exist=True,
         )
