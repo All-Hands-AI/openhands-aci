@@ -298,13 +298,13 @@ class SymbolNavigator:
         for tag in tags + [dummy_tag]:  # Add dummy tag to trigger last file output
             if tag.rel_path != cur_rel_file:
                 if lines_of_interest:
-                    output += cur_rel_file + ':\n'
+                    output += cur_rel_file + ':\n' if prepend_file_name else ''
                     output += self._render_tree(
                         cur_abs_file, cur_rel_file, lines_of_interest
                     )
                     lines_of_interest = []
                 elif cur_rel_file:  # No line of interest
-                    output += '\n' + cur_rel_file + ':\n'
+                    output += '\n' + cur_rel_file + ':\n' if prepend_file_name else ''
 
                 cur_abs_file = tag.abs_path
                 cur_rel_file = tag.rel_path
