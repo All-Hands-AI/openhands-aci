@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from openhands_aci.editor.editor import OHEditor
@@ -11,6 +13,7 @@ from openhands_aci.editor.results import CLIResult, ToolResult
 
 @pytest.fixture
 def editor(tmp_path):
+    os.chdir(tmp_path)
     editor = OHEditor()
     # Set up a temporary directory with test files
     test_file = tmp_path / 'test.txt'
@@ -20,6 +23,7 @@ def editor(tmp_path):
 
 @pytest.fixture
 def editor_python_file_with_tabs(tmp_path):
+    os.chdir(tmp_path)
     editor = OHEditor()
     # Set up a temporary directory with test files
     test_file = tmp_path / 'test.py'

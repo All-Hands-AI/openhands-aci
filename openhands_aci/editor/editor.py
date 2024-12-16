@@ -195,7 +195,22 @@ class OHEditor:
                 rf"find -L {path} -maxdepth 2 -not -path '*/\.*'"
             )
             if not stderr:
-                stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
+                if self._symbol_navigator.is_enabled:
+                    path_depth = len(path.parts)
+                    all_abs_paths_list = stdout.split('\n')
+                    abs_path_to_skeleton = self._symbol_navigator.get_skeletons(
+                        all_abs_paths_list,
+                        path_depth,
+                    )
+                    stdout = '\n'.join(
+                        [
+                            f'{abs_path}{'\n' + abs_path_to_skeleton[abs_path] if abs_path in abs_path_to_skeleton else ''}'
+                            for abs_path in all_abs_paths_list
+                        ]
+                    )
+                    stdout = f"Here's the files with its skeleton (i.e., class, function/method signatures) and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
+                else:
+                    stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
             return CLIResult(
                 output=stdout,
                 error=stderr,
@@ -208,7 +223,10 @@ class OHEditor:
         if not view_range:
             return CLIResult(
                 output=self._make_output(file_content, str(path), start_line)
-                + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''),
+                + (
+                    # self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                    NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''
+                ),
                 path=str(path),
                 prev_exist=True,
             )
@@ -248,10 +266,14 @@ class OHEditor:
             file_content = '\n'.join(file_content_lines[start_line - 1 :])
         else:
             file_content = '\n'.join(file_content_lines[start_line - 1 : end_line])
+
         return CLIResult(
             path=str(path),
             output=self._make_output(file_content, str(path), start_line)
-            + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''),
+            + (
+                # self._symbol_navigator.get_out_and_in_edges_suggestion(str(path))
+                NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''
+            ),
             prev_exist=True,
         )
 
