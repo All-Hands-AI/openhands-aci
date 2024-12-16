@@ -196,9 +196,11 @@ class OHEditor:
             )
             if not stderr:
                 if self._symbol_navigator.is_enabled:
+                    path_depth = len(path.parts)
                     all_abs_paths_list = stdout.split('\n')
                     abs_path_to_skeleton = self._symbol_navigator.get_skeletons(
-                        all_abs_paths_list
+                        all_abs_paths_list,
+                        path_depth,
                     )
                     stdout = '\n'.join(
                         [

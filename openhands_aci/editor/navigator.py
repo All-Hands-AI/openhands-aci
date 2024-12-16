@@ -6,6 +6,8 @@ from grep_ast import TreeContext
 from rapidfuzz import process
 from tqdm import tqdm
 
+from openhands_aci.editor.config import MAX_RESPONSE_LEN_CHAR
+from openhands_aci.editor.prompts import SKELETON_CONTENT_TRUNCATED_NOTICE
 from openhands_aci.tree_sitter.parser import ParsedTag, TagKind, TreeSitterParser
 from openhands_aci.utils.file import GitRepoUtils, get_modified_time, read_text
 from openhands_aci.utils.path import PathUtils
@@ -178,7 +180,7 @@ class SymbolNavigator:
 
         return suggestion_out + suggestion_in
 
-    def get_skeletons(self, all_abs_paths: list[str]) -> dict[str, str]:
+    def get_skeletons(self, all_abs_paths: list[str], depth: int) -> dict[str, str]:
         all_abs_tracked_files = self.git_utils.get_all_absolute_tracked_files()
 
         # Filter out the files that are tracked by the git repo
@@ -187,7 +189,6 @@ class SymbolNavigator:
         )
 
         abs_path_to_tree_repr = {}
-
         for abs_path in all_abs_paths:
             rel_path = self.path_utils.get_relative_path_str(abs_path)
             parsed_tags = self.ts_parser.get_tags_from_file(abs_path, rel_path)
@@ -195,6 +196,46 @@ class SymbolNavigator:
 
             abs_path_to_tree_repr[abs_path] = self._tag_list_to_tree(
                 def_tags, use_end_line=False, prepend_file_name=False
+            )
+
+        # Count length of all paths only
+        all_abs_paths_str = '\n'.join(all_abs_paths)
+        skeleton_max_len = MAX_RESPONSE_LEN_CHAR * depth - len(
+            all_abs_paths_str
+        )  # Allow more tokens as the agent views deeper directories
+        avg_len_per_path = skeleton_max_len // len(all_abs_paths)
+
+        # Content trunction: for all files where skeleton length is less than the average length, include the
+        # full skeleton. Otherwise, include proportional to the length of the file.
+        tree_repr_full = {}
+        tree_to_truncate = {}
+        for abs_path, tree_repr in abs_path_to_tree_repr.items():
+            if len(tree_repr) < avg_len_per_path:
+                tree_repr_full[abs_path] = tree_repr
+            else:
+                tree_to_truncate[abs_path] = tree_repr
+
+        # Calculate the total length of the full skeletons
+        total_len_full_skeletons = sum(
+            len(tree_repr) for tree_repr in tree_repr_full.values()
+        )
+        # Calculate total actual length of the to-truncate skeletons
+        total_len_to_truncate_skeletons = sum(
+            len(tree_repr) for tree_repr in tree_to_truncate.values()
+        )
+        # Calculate the max length of the truncated skeletons
+        max_len_truncated_skeletons = skeleton_max_len - total_len_full_skeletons
+
+        # Perform truncation with proportional length
+        for abs_path, tree_repr in tree_to_truncate.items():
+            tree_repr_len = len(tree_repr)
+            tree_repr_truncated_len = int(
+                (tree_repr_len / total_len_to_truncate_skeletons)
+                * max_len_truncated_skeletons
+            )
+            tree_repr_truncated = tree_repr[:tree_repr_truncated_len]
+            abs_path_to_tree_repr[abs_path] = (
+                tree_repr_truncated + SKELETON_CONTENT_TRUNCATED_NOTICE
             )
 
         return abs_path_to_tree_repr
