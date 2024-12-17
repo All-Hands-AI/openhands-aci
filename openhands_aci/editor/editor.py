@@ -1,3 +1,5 @@
+import argparse
+import json
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -12,6 +14,8 @@ from .exceptions import (
     EditorToolParameterMissingError,
     ToolError,
 )
+from .navigator import SymbolNavigator
+from .prompts import NAVIGATION_TIPS
 from .results import CLIResult, maybe_truncate
 
 Command = Literal[
@@ -20,8 +24,8 @@ Command = Literal[
     'str_replace',
     'insert',
     'undo_edit',
-    # 'jump_to_definition', TODO:
-    # 'find_references' TODO:
+    'jump_to_definition',
+    'find_references',
 ]
 
 
@@ -42,22 +46,29 @@ class OHEditor:
     def __init__(self):
         self._file_history: dict[Path, list[str]] = defaultdict(list)
         self._linter = DefaultLinter()
+        self._symbol_navigator = SymbolNavigator()
 
     def __call__(
         self,
         *,
         command: Command,
-        path: str,
+        path: str | None = None,
         file_text: str | None = None,
         view_range: list[int] | None = None,
         old_str: str | None = None,
         new_str: str | None = None,
         insert_line: int | None = None,
+        symbol_name: str | None = None,
         enable_linting: bool = False,
         **kwargs,
     ) -> CLIResult:
-        _path = Path(path)
-        self.validate_path(command, _path)
+        if path is None and command not in ['jump_to_definition', 'find_references']:
+            raise EditorToolParameterMissingError(command, 'path')
+
+        if path is not None:
+            _path = Path(path)
+            self.validate_path(command, _path)
+
         if command == 'view':
             return self.view(_path, view_range)
         elif command == 'create':
@@ -88,6 +99,14 @@ class OHEditor:
             return self.insert(_path, insert_line, new_str, enable_linting)
         elif command == 'undo_edit':
             return self.undo_edit(_path)
+        elif command == 'jump_to_definition':
+            if not symbol_name:
+                raise EditorToolParameterMissingError(command, 'symbol_name')
+            return self.jump_to_definition(_path if path else None, symbol_name)
+        elif command == 'find_references':
+            if not symbol_name:
+                raise EditorToolParameterMissingError(command, 'symbol_name')
+            return self.find_references(symbol_name)
 
         raise ToolError(
             f'Unrecognized command {command}. The allowed commands for the {self.TOOL_NAME} tool are: {", ".join(get_args(Command))}'
@@ -188,7 +207,8 @@ class OHEditor:
         start_line = 1
         if not view_range:
             return CLIResult(
-                output=self._make_output(file_content, str(path), start_line),
+                output=self._make_output(file_content, str(path), start_line)
+                + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''),
                 path=str(path),
                 prev_exist=True,
             )
@@ -230,7 +250,8 @@ class OHEditor:
             file_content = '\n'.join(file_content_lines[start_line - 1 : end_line])
         return CLIResult(
             path=str(path),
-            output=self._make_output(file_content, str(path), start_line),
+            output=self._make_output(file_content, str(path), start_line)
+            + (NAVIGATION_TIPS if self._symbol_navigator.is_enabled else ''),
             prev_exist=True,
         )
 
@@ -306,6 +327,21 @@ class OHEditor:
             old_content=file_text,
             new_content=new_file_text,
         )
+
+    def jump_to_definition(self, path: Path | None, symbol_name: str) -> CLIResult:
+        """
+        Implement the jump_to_definition command.
+        """
+        # FIXME: remove the path parameter from the method signature
+        return CLIResult(
+            output=self._symbol_navigator.get_definitions_tree(symbol_name)
+        )
+
+    def find_references(self, symbol_name: str) -> CLIResult:
+        """
+        Implement the find_references command.
+        """
+        return CLIResult(output=self._symbol_navigator.get_references_tree(symbol_name))
 
     def validate_path(self, command: Command, path: Path) -> None:
         """
@@ -420,3 +456,113 @@ class OHEditor:
                     f'- Line {result.line}, Column {result.column}: {result.message}'
                 )
             return '\n'.join(output) + '\n'
+
+
+def parse_command_input(cmd_input: str) -> tuple[Command, dict]:
+    """Parse the command input into command name and parameters."""
+    try:
+        cmd_dict = json.loads(cmd_input)
+        command = cmd_dict.pop('command')
+        assert command in get_args(Command)
+        return command, cmd_dict  # type: ignore
+    except json.JSONDecodeError:
+        raise ValueError('Invalid command format. Please provide a valid JSON object.')
+    except KeyError:
+        raise ValueError("Command must include a 'command' field.")
+
+
+def print_help():
+    """Print available commands and their usage."""
+    help_text = """
+Available commands (provide as JSON objects):
+------------------------------------------
+1. View file/directory:
+    {"command": "view", "path": "/absolute/path", "view_range": [start_line, end_line]}
+
+2. Create file:
+    {"command": "create", "path": "/absolute/path", "file_text": "content"}
+
+3. Replace string:
+    {"command": "str_replace", "path": "/absolute/path", "old_str": "old", "new_str": "new"}
+
+4. Insert at line:
+    {"command": "insert", "path": "/absolute/path", "insert_line": number, "new_str": "content"}
+
+5. Undo last edit:
+    {"command": "undo_edit", "path": "/absolute/path"}
+
+6. Jump to definition:
+    {"command": "jump_to_definition", "path": "/absolute/path", "symbol_name": "symbol"}
+
+7. Find references:
+    {"command": "find_references", "symbol_name": "symbol"}
+
+Type 'exit' to quit or 'help' to see this message again.
+"""
+    print(help_text)
+
+
+def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='OHEditor - File System Editor Tool')
+    parser.add_argument(
+        '--workspace',
+        type=str,
+        default='./',
+        help='Workspace directory path (default: current directory)',
+    )
+
+    # Parse command line arguments
+    args = parser.parse_args()
+
+    # Initialize the editor
+    editor = OHEditor()
+
+    # Print welcome message and help
+    print(f'OHEditor initialized with workspace: {args.workspace}')
+    print_help()
+
+    # Main command loop
+    while True:
+        try:
+            # Get user input
+            user_input = input("\nEnter command (or 'help'/'exit'): ").strip()
+
+            # Check for exit command
+            if user_input.lower() == 'exit':
+                print('Exiting OHEditor...')
+                break
+
+            # Check for help command
+            if user_input.lower() == 'help':
+                print_help()
+                continue
+
+            # Parse and execute command
+            try:
+                command, params = parse_command_input(user_input)
+                result = editor(command=command, **params)
+                print('\nResult:')
+                print(result.output)
+                if result.error:
+                    print('\nErrors:')
+                    print(result.error)
+
+            except (
+                ValueError,
+                ToolError,
+                EditorToolParameterInvalidError,
+                EditorToolParameterMissingError,
+            ) as e:
+                print(f'\nError: {str(e)}')
+
+        except KeyboardInterrupt:
+            print("\nReceived interrupt signal. Type 'exit' to quit.")
+            continue
+        except Exception as e:
+            print(f'\nUnexpected error: {str(e)}')
+            continue
+
+
+if __name__ == '__main__':
+    main()
