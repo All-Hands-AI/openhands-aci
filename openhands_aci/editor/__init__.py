@@ -27,6 +27,7 @@ def file_editor(
     insert_line: int | None = None,
     enable_linting: bool = False,
 ) -> str:
+    result: ToolResult | None = None
     try:
         result = _GLOBAL_EDITOR(
             command=command,
@@ -39,7 +40,7 @@ def file_editor(
             enable_linting=enable_linting,
         )
     except ToolError as e:
-        return _make_api_tool_result(ToolResult(error=e.message))
+        result = ToolResult(error=e.message)
 
     formatted_output_and_error = _make_api_tool_result(result)
     marker_id = uuid.uuid4().hex
