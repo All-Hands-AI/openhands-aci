@@ -67,6 +67,7 @@ class OHEditor:
             self._file_history[_path].append(file_text)
             return CLIResult(
                 path=str(_path),
+                new_content=file_text,
                 prev_exist=False,
                 output=f'File created successfully at: {_path}',
             )
