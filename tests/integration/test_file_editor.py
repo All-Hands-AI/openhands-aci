@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import pytest
@@ -8,6 +9,8 @@ from openhands_aci.editor import file_editor
 
 @pytest.fixture
 def temp_file(tmp_path):
+    os.chdir(tmp_path)
+
     # Set up a temporary directory with test files
     test_file = tmp_path / 'test_file.txt'
     test_file.write_text('This is a test file.\nThis file is for testing purposes.')
