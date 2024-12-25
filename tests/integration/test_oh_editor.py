@@ -54,6 +54,24 @@ def test_create_file(editor):
     assert 'File created successfully' in result.output
 
 
+def test_create_with_empty_string(editor):
+    editor, test_file = editor
+    new_file = test_file.parent / 'empty_content.txt'
+    result = editor(command='create', path=str(new_file), file_text='')
+    assert isinstance(result, ToolResult)
+    assert new_file.exists()
+    assert new_file.read_text() == ''
+    assert 'File created successfully' in result.output
+
+
+def test_create_with_none_file_text(editor):
+    editor, test_file = editor
+    new_file = test_file.parent / 'none_content.txt'
+    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+        editor(command='create', path=str(new_file), file_text=None)
+    assert 'file_text' in str(exc_info.value.message)
+
+
 def test_str_replace_no_linting(editor):
     editor, test_file = editor
     result = editor(
@@ -188,6 +206,31 @@ def test_str_replace_nonexistent_string(editor):
     )
 
 
+def test_str_replace_with_empty_string(editor):
+    editor, test_file = editor
+    test_file.write_text('Line 1\nLine to remove\nLine 3')
+    result = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='Line to remove\n',
+        new_str='',
+    )
+    assert isinstance(result, CLIResult)
+    assert test_file.read_text() == 'Line 1\nLine 3'
+
+
+def test_str_replace_with_none_old_str(editor):
+    editor, test_file = editor
+    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+        editor(
+            command='str_replace',
+            path=str(test_file),
+            old_str=None,
+            new_str='new content',
+        )
+    assert 'old_str' in str(exc_info.value.message)
+
+
 def test_insert_no_linting(editor):
     editor, test_file = editor
     result = editor(
@@ -243,6 +286,32 @@ def test_insert_invalid_line(editor):
     assert 'It should be within the range of lines of the file' in str(
         exc_info.value.message
     )
+
+
+def test_insert_with_empty_string(editor):
+    editor, test_file = editor
+    result = editor(
+        command='insert',
+        path=str(test_file),
+        insert_line=1,
+        new_str='',
+    )
+    assert isinstance(result, CLIResult)
+    content = test_file.read_text().splitlines()
+    assert '' in content
+    assert len(content) == 3  # Original 2 lines plus empty line
+
+
+def test_insert_with_none_new_str(editor):
+    editor, test_file = editor
+    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+        editor(
+            command='insert',
+            path=str(test_file),
+            insert_line=1,
+            new_str=None,
+        )
+    assert 'new_str' in str(exc_info.value.message)
 
 
 def test_undo_edit(editor):
