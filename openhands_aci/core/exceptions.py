@@ -5,7 +5,7 @@ class ToolError(Exception):
         self.message = message
 
 
-class EditorToolParameterMissingError(ToolError):
+class MultiCommandToolParameterMissingError(ToolError):
     """Raised when a required parameter is missing for a tool command."""
 
     def __init__(self, command, parameter):
@@ -14,7 +14,7 @@ class EditorToolParameterMissingError(ToolError):
         self.message = f'Parameter `{parameter}` is required for command: {command}.'
 
 
-class EditorToolParameterInvalidError(ToolError):
+class ToolParameterInvalidError(ToolError):
     """Raised when a parameter is invalid for a tool command."""
 
     def __init__(self, parameter, value, hint=None):

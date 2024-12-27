@@ -1,12 +1,12 @@
 import pytest
 
-from openhands_aci.editor.editor import OHEditor
-from openhands_aci.editor.exceptions import (
-    EditorToolParameterInvalidError,
-    EditorToolParameterMissingError,
+from openhands_aci.core.exceptions import (
+    MultiCommandToolParameterMissingError,
     ToolError,
+    ToolParameterInvalidError,
 )
-from openhands_aci.editor.results import CLIResult, ToolResult
+from openhands_aci.core.results import CLIResult, ToolResult
+from openhands_aci.editor.editor import OHEditor
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def test_create_with_empty_string(editor):
 def test_create_with_none_file_text(editor):
     editor, test_file = editor
     new_file = test_file.parent / 'none_content.txt'
-    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+    with pytest.raises(MultiCommandToolParameterMissingError) as exc_info:
         editor(command='create', path=str(new_file), file_text=None)
     assert 'file_text' in str(exc_info.value.message)
 
@@ -221,7 +221,7 @@ def test_str_replace_with_empty_string(editor):
 
 def test_str_replace_with_none_old_str(editor):
     editor, test_file = editor
-    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+    with pytest.raises(MultiCommandToolParameterMissingError) as exc_info:
         editor(
             command='str_replace',
             path=str(test_file),
@@ -275,7 +275,7 @@ Review the changes and make sure they are as expected (correct indentation, no d
 
 def test_insert_invalid_line(editor):
     editor, test_file = editor
-    with pytest.raises(EditorToolParameterInvalidError) as exc_info:
+    with pytest.raises(ToolParameterInvalidError) as exc_info:
         editor(
             command='insert',
             path=str(test_file),
@@ -304,7 +304,7 @@ def test_insert_with_empty_string(editor):
 
 def test_insert_with_none_new_str(editor):
     editor, test_file = editor
-    with pytest.raises(EditorToolParameterMissingError) as exc_info:
+    with pytest.raises(MultiCommandToolParameterMissingError) as exc_info:
         editor(
             command='insert',
             path=str(test_file),
@@ -333,25 +333,25 @@ def test_undo_edit(editor):
 def test_validate_path_invalid(editor):
     editor, test_file = editor
     invalid_file = test_file.parent / 'nonexistent.txt'
-    with pytest.raises(EditorToolParameterInvalidError):
+    with pytest.raises(ToolParameterInvalidError):
         editor(command='view', path=str(invalid_file))
 
 
 def test_create_existing_file_error(editor):
     editor, test_file = editor
-    with pytest.raises(EditorToolParameterInvalidError):
+    with pytest.raises(ToolParameterInvalidError):
         editor(command='create', path=str(test_file), file_text='New content')
 
 
 def test_str_replace_missing_old_str(editor):
     editor, test_file = editor
-    with pytest.raises(EditorToolParameterMissingError):
+    with pytest.raises(MultiCommandToolParameterMissingError):
         editor(command='str_replace', path=str(test_file), new_str='sample')
 
 
 def test_str_replace_new_str_and_old_str_same(editor):
     editor, test_file = editor
-    with pytest.raises(EditorToolParameterInvalidError) as exc_info:
+    with pytest.raises(ToolParameterInvalidError) as exc_info:
         editor(
             command='str_replace',
             path=str(test_file),
@@ -366,7 +366,7 @@ def test_str_replace_new_str_and_old_str_same(editor):
 
 def test_insert_missing_line_param(editor):
     editor, test_file = editor
-    with pytest.raises(EditorToolParameterMissingError):
+    with pytest.raises(MultiCommandToolParameterMissingError):
         editor(command='insert', path=str(test_file), new_str='Missing insert line')
 
 

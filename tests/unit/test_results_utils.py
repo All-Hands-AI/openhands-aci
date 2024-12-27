@@ -1,6 +1,6 @@
+from openhands_aci.core.results import ToolResult, maybe_truncate
 from openhands_aci.editor.config import MAX_RESPONSE_LEN_CHAR
 from openhands_aci.editor.prompts import CONTENT_TRUNCATED_NOTICE
-from openhands_aci.editor.results import ToolResult, maybe_truncate
 
 
 def test_tool_result_bool():

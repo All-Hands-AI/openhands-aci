@@ -3,16 +3,16 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Literal, get_args
 
+from openhands_aci.core.exceptions import (
+    MultiCommandToolParameterMissingError,
+    ToolError,
+    ToolParameterInvalidError,
+)
+from openhands_aci.core.results import CLIResult, maybe_truncate
 from openhands_aci.linter import DefaultLinter
 from openhands_aci.utils.shell import run_shell_cmd
 
 from .config import SNIPPET_CONTEXT_WINDOW
-from .exceptions import (
-    EditorToolParameterInvalidError,
-    EditorToolParameterMissingError,
-    ToolError,
-)
-from .results import CLIResult, maybe_truncate
 
 Command = Literal[
     'view',
@@ -20,8 +20,6 @@ Command = Literal[
     'str_replace',
     'insert',
     'undo_edit',
-    # 'jump_to_definition', TODO:
-    # 'find_references' TODO:
 ]
 
 
@@ -62,7 +60,7 @@ class OHEditor:
             return self.view(_path, view_range)
         elif command == 'create':
             if file_text is None:
-                raise EditorToolParameterMissingError(command, 'file_text')
+                raise MultiCommandToolParameterMissingError(command, 'file_text')
             self.write_file(_path, file_text)
             self._file_history[_path].append(file_text)
             return CLIResult(
@@ -73,9 +71,9 @@ class OHEditor:
             )
         elif command == 'str_replace':
             if old_str is None:
-                raise EditorToolParameterMissingError(command, 'old_str')
+                raise MultiCommandToolParameterMissingError(command, 'old_str')
             if new_str == old_str:
-                raise EditorToolParameterInvalidError(
+                raise ToolParameterInvalidError(
                     'new_str',
                     new_str,
                     'No replacement was performed. `new_str` and `old_str` must be different.',
@@ -83,9 +81,9 @@ class OHEditor:
             return self.str_replace(_path, old_str, new_str, enable_linting)
         elif command == 'insert':
             if insert_line is None:
-                raise EditorToolParameterMissingError(command, 'insert_line')
+                raise MultiCommandToolParameterMissingError(command, 'insert_line')
             if new_str is None:
-                raise EditorToolParameterMissingError(command, 'new_str')
+                raise MultiCommandToolParameterMissingError(command, 'new_str')
             return self.insert(_path, insert_line, new_str, enable_linting)
         elif command == 'undo_edit':
             return self.undo_edit(_path)
@@ -167,7 +165,7 @@ class OHEditor:
         """
         if path.is_dir():
             if view_range:
-                raise EditorToolParameterInvalidError(
+                raise ToolParameterInvalidError(
                     'view_range',
                     view_range,
                     'The `view_range` parameter is not allowed when `path` points to a directory.',
@@ -195,7 +193,7 @@ class OHEditor:
             )
 
         if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'view_range',
                 view_range,
                 'It should be a list of two integers.',
@@ -205,21 +203,21 @@ class OHEditor:
         num_lines = len(file_content_lines)
         start_line, end_line = view_range
         if start_line < 1 or start_line > num_lines:
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'view_range',
                 view_range,
                 f'Its first element `{start_line}` should be within the range of lines of the file: {[1, num_lines]}.',
             )
 
         if end_line > num_lines:
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'view_range',
                 view_range,
                 f'Its second element `{end_line}` should be smaller than the number of lines in the file: `{num_lines}`.',
             )
 
         if end_line != -1 and end_line < start_line:
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'view_range',
                 view_range,
                 f'Its second element `{end_line}` should be greater than or equal to the first element `{start_line}`.',
@@ -262,7 +260,7 @@ class OHEditor:
         num_lines = len(file_text_lines)
 
         if insert_line < 0 or insert_line > num_lines:
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'insert_line',
                 insert_line,
                 f'It should be within the range of lines of the file: {[0, num_lines]}',
@@ -315,26 +313,26 @@ class OHEditor:
         # Check if its an absolute path
         if not path.is_absolute():
             suggested_path = Path('') / path
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'path',
                 path,
                 f'The path should be an absolute path, starting with `/`. Maybe you meant {suggested_path}?',
             )
         # Check if path and command are compatible
         if command == 'create' and path.exists():
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'path',
                 path,
                 f'File already exists at: {path}. Cannot overwrite files using command `create`.',
             )
         if command != 'create' and not path.exists():
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'path',
                 path,
                 f'The path {path} does not exist. Please provide a valid path.',
             )
         if command != 'view' and path.is_dir():
-            raise EditorToolParameterInvalidError(
+            raise ToolParameterInvalidError(
                 'path',
                 path,
                 f'The path {path} is a directory and only the `view` command can be used on directories.',

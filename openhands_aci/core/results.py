@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass, fields
 
-from .config import MAX_RESPONSE_LEN_CHAR
-from .prompts import CONTENT_TRUNCATED_NOTICE
+from ..editor.config import MAX_RESPONSE_LEN_CHAR
+from ..editor.prompts import CONTENT_TRUNCATED_NOTICE
 
 
 @dataclass
@@ -45,3 +45,12 @@ def maybe_truncate(
         if not truncate_after or len(content) <= truncate_after
         else content[:truncate_after] + CONTENT_TRUNCATED_NOTICE
     )
+
+
+def make_api_tool_result(tool_result: ToolResult) -> str:
+    """Convert an agent ToolResult to an API ToolResultBlockParam."""
+    if tool_result.error:
+        return f'ERROR:\n{tool_result.error}'
+
+    assert tool_result.output, 'Expected output in file_editor.'
+    return tool_result.output
