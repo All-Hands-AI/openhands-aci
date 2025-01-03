@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from openhands_aci.core.exceptions import (
@@ -11,6 +13,8 @@ from openhands_aci.editor.editor import OHEditor
 
 @pytest.fixture
 def editor(tmp_path):
+    os.chdir(tmp_path)
+
     editor = OHEditor()
     # Set up a temporary directory with test files
     test_file = tmp_path / 'test.txt'

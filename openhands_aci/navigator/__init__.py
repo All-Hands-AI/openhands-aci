@@ -3,7 +3,7 @@ from openhands_aci.core.results import ToolResult, make_api_tool_result
 
 from .navigator import Command, SymbolNavigator
 
-_GLOBAL_NAVIGATOR = SymbolNavigator()
+GLOBAL_NAVIGATOR = SymbolNavigator()
 
 
 TOOL_DESCRIPTION = """Custom navigation tool for navigating to symbols in a codebase
@@ -25,7 +25,7 @@ def symbol_navigator(
 ) -> str:
     result: ToolResult | None = None
     try:
-        result = _GLOBAL_NAVIGATOR(
+        result = GLOBAL_NAVIGATOR(
             command=command,
             symbol_name=symbol_name,
         )
