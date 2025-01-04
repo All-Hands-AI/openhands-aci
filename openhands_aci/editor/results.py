@@ -35,7 +35,9 @@ class CLIResult(ToolResult):
 
 
 def maybe_truncate(
-    content: str, truncate_after: int | None = MAX_RESPONSE_LEN_CHAR
+    content: str,
+    truncate_after: int | None = MAX_RESPONSE_LEN_CHAR,
+    truncate_notice: str = CONTENT_TRUNCATED_NOTICE,
 ) -> str:
     """
     Truncate content and append a notice if content exceeds the specified length.
@@ -43,5 +45,5 @@ def maybe_truncate(
     return (
         content
         if not truncate_after or len(content) <= truncate_after
-        else content[:truncate_after] + CONTENT_TRUNCATED_NOTICE
+        else content[:truncate_after] + truncate_notice
     )

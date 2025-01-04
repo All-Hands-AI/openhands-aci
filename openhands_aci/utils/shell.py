@@ -3,6 +3,7 @@ import subprocess
 import time
 
 from openhands_aci.editor.config import MAX_RESPONSE_LEN_CHAR
+from openhands_aci.editor.prompts import CONTENT_TRUNCATED_NOTICE
 from openhands_aci.editor.results import maybe_truncate
 
 
@@ -10,6 +11,7 @@ def run_shell_cmd(
     cmd: str,
     timeout: float | None = 120.0,  # seconds
     truncate_after: int | None = MAX_RESPONSE_LEN_CHAR,
+    truncate_notice: str = CONTENT_TRUNCATED_NOTICE,
 ) -> tuple[int, str, str]:
     """Run a shell command synchronously with a timeout.
 
@@ -33,8 +35,14 @@ def run_shell_cmd(
 
         return (
             process.returncode or 0,
-            maybe_truncate(stdout, truncate_after=truncate_after),
-            maybe_truncate(stderr, truncate_after=truncate_after),
+            maybe_truncate(
+                stdout, truncate_after=truncate_after, truncate_notice=truncate_notice
+            ),
+            maybe_truncate(
+                stderr,
+                truncate_after=truncate_after,
+                truncate_notice=CONTENT_TRUNCATED_NOTICE,
+            ),  # Use generic notice for stderr
         )
     except subprocess.TimeoutExpired:
         process.kill()

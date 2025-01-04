@@ -12,6 +12,7 @@ from .exceptions import (
     EditorToolParameterMissingError,
     ToolError,
 )
+from .prompts import DIRECTORY_CONTENT_TRUNCATED_NOTICE, FILE_CONTENT_TRUNCATED_NOTICE
 from .results import CLIResult, maybe_truncate
 
 Command = Literal[
@@ -174,7 +175,8 @@ class OHEditor:
                 )
 
             _, stdout, stderr = run_shell_cmd(
-                rf"find -L {path} -maxdepth 2 -not -path '*/\.*'"
+                rf"find -L {path} -maxdepth 2 -not -path '*/\.*'",
+                truncate_notice=DIRECTORY_CONTENT_TRUNCATED_NOTICE,
             )
             if not stderr:
                 stdout = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}\n"
@@ -378,7 +380,9 @@ class OHEditor:
         """
         Generate output for the CLI based on the content of a code snippet.
         """
-        snippet_content = maybe_truncate(snippet_content)
+        snippet_content = maybe_truncate(
+            snippet_content, truncate_notice=FILE_CONTENT_TRUNCATED_NOTICE
+        )
         if expand_tabs:
             snippet_content = snippet_content.expandtabs()
 
