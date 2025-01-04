@@ -6,6 +6,10 @@ from openhands_aci.editor.exceptions import (
     EditorToolParameterMissingError,
     ToolError,
 )
+from openhands_aci.editor.prompts import (
+    DIRECTORY_CONTENT_TRUNCATED_NOTICE,
+    FILE_CONTENT_TRUNCATED_NOTICE,
+)
 from openhands_aci.editor.results import CLIResult, ToolResult
 
 
@@ -406,3 +410,28 @@ def test_view_symlinked_directory(tmp_path):
     assert 'file2.txt' in result.output
     assert 'subdir' in result.output
     assert 'file3.txt' in result.output
+
+
+def test_view_large_directory_with_truncation(editor, tmp_path):
+    editor, _ = editor
+    # Create a directory with many files to trigger truncation
+    large_dir = tmp_path / 'large_dir'
+    large_dir.mkdir()
+    for i in range(1000):  # 1000 files should trigger truncation
+        (large_dir / f'file_{i}.txt').write_text('content')
+
+    result = editor(command='view', path=str(large_dir))
+    assert isinstance(result, CLIResult)
+    assert DIRECTORY_CONTENT_TRUNCATED_NOTICE in result.output
+
+
+def test_view_large_file_with_truncation(editor, tmp_path):
+    editor, _ = editor
+    # Create a large file to trigger truncation
+    large_file = tmp_path / 'large_test.txt'
+    large_content = 'Line 1\n' * 16000  # 16000 lines should trigger truncation
+    large_file.write_text(large_content)
+
+    result = editor(command='view', path=str(large_file))
+    assert isinstance(result, CLIResult)
+    assert FILE_CONTENT_TRUNCATED_NOTICE in result.output
