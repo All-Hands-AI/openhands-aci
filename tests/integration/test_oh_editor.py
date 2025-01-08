@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from openhands_aci.editor.editor import OHEditor
@@ -475,3 +477,15 @@ def test_view_large_file_with_truncation(editor, tmp_path):
     result = editor(command='view', path=str(large_file))
     assert isinstance(result, CLIResult)
     assert FILE_CONTENT_TRUNCATED_NOTICE in result.output
+
+
+def test_validate_path_suggests_absolute_path(editor):
+    editor, test_file = editor
+    relative_path = test_file.name  # This is a relative path
+    with pytest.raises(EditorToolParameterInvalidError) as exc_info:
+        editor(command='view', path=relative_path)
+    error_message = str(exc_info.value.message)
+    assert 'The path should be an absolute path' in error_message
+    assert 'Maybe you meant' in error_message
+    suggested_path = error_message.split('Maybe you meant ')[1].strip('?')
+    assert Path(suggested_path).is_absolute()

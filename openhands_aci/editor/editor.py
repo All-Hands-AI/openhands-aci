@@ -334,7 +334,7 @@ class OHEditor:
         """
         # Check if its an absolute path
         if not path.is_absolute():
-            suggested_path = Path('') / path
+            suggested_path = Path.cwd() / path
             raise EditorToolParameterInvalidError(
                 'path',
                 path,
