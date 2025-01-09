@@ -467,9 +467,9 @@ def test_view_large_directory_with_truncation(editor, tmp_path):
     assert DIRECTORY_CONTENT_TRUNCATED_NOTICE in result.output
 
 
-def test_view_directory_with_hidden_files_at_multiple_depths(tmp_path):
+def test_view_directory_on_hidden_path(tmp_path):
     """Directory structure:
-    test_dir/
+    .test_dir/
     ├── visible1.txt
     ├── .hidden1
     ├── visible_dir/
@@ -483,25 +483,25 @@ def test_view_directory_with_hidden_files_at_multiple_depths(tmp_path):
     editor = OHEditor()
 
     # Create a directory with test files at depth 1
-    test_dir = tmp_path / 'test_dir'
-    test_dir.mkdir()
-    (test_dir / 'visible1.txt').write_text('content1')
-    (test_dir / '.hidden1').write_text('hidden1')
+    hidden_test_dir = tmp_path / '.hidden_test_dir'
+    hidden_test_dir.mkdir()
+    (hidden_test_dir / 'visible1.txt').write_text('content1')
+    (hidden_test_dir / '.hidden1').write_text('hidden1')
 
     # Create a visible subdirectory with visible and hidden files
-    visible_subdir = test_dir / 'visible_dir'
+    visible_subdir = hidden_test_dir / 'visible_dir'
     visible_subdir.mkdir()
     (visible_subdir / 'visible2.txt').write_text('content2')
     (visible_subdir / '.hidden2').write_text('hidden2')
 
     # Create a hidden subdirectory with visible and hidden files
-    hidden_subdir = test_dir / '.hidden_dir'
+    hidden_subdir = hidden_test_dir / '.hidden_dir'
     hidden_subdir.mkdir()
     (hidden_subdir / 'visible3.txt').write_text('content3')
     (hidden_subdir / '.hidden3').write_text('hidden3')
 
     # View the directory
-    result = editor(command='view', path=str(test_dir))
+    result = editor(command='view', path=str(hidden_test_dir))
 
     # Verify output
     assert isinstance(result, CLIResult)
