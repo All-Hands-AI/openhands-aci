@@ -467,6 +467,64 @@ def test_view_large_directory_with_truncation(editor, tmp_path):
     assert DIRECTORY_CONTENT_TRUNCATED_NOTICE in result.output
 
 
+def test_view_directory_with_hidden_files_at_multiple_depths(tmp_path):
+    """Directory structure:
+    test_dir/
+    ├── visible1.txt
+    ├── .hidden1
+    ├── visible_dir/
+    │   ├── visible2.txt
+    │   └── .hidden2
+    └── .hidden_dir/
+        ├── visible3.txt
+        └── .hidden3
+    """
+
+    editor = OHEditor()
+
+    # Create a directory with test files at depth 1
+    test_dir = tmp_path / 'test_dir'
+    test_dir.mkdir()
+    (test_dir / 'visible1.txt').write_text('content1')
+    (test_dir / '.hidden1').write_text('hidden1')
+
+    # Create a visible subdirectory with visible and hidden files
+    visible_subdir = test_dir / 'visible_dir'
+    visible_subdir.mkdir()
+    (visible_subdir / 'visible2.txt').write_text('content2')
+    (visible_subdir / '.hidden2').write_text('hidden2')
+
+    # Create a hidden subdirectory with visible and hidden files
+    hidden_subdir = test_dir / '.hidden_dir'
+    hidden_subdir.mkdir()
+    (hidden_subdir / 'visible3.txt').write_text('content3')
+    (hidden_subdir / '.hidden3').write_text('hidden3')
+
+    # View the directory
+    result = editor(command='view', path=str(test_dir))
+
+    # Verify output
+    assert isinstance(result, CLIResult)
+    # Depth 1: Visible files/dirs shown, hidden files/dirs not shown
+    assert 'visible1.txt' in result.output
+    assert 'visible_dir' in result.output
+    assert '.hidden1' not in result.output
+    assert '.hidden_dir' not in result.output
+
+    # Depth 2: Files in visible_dir shown
+    assert 'visible2.txt' in result.output
+    assert '.hidden2' not in result.output
+
+    # Depth 2: Files in hidden_dir not shown
+    assert 'visible3.txt' not in result.output
+    assert '.hidden3' not in result.output
+
+    # Hidden file count only includes depth 1
+    assert (
+        '2 hidden files/directories in this directory are excluded' in result.output
+    )  # Only .hidden1 and .hidden_dir at depth 1
+
+
 def test_view_large_file_with_truncation(editor, tmp_path):
     editor, _ = editor
     # Create a large file to trigger truncation
