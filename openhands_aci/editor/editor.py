@@ -186,7 +186,7 @@ class OHEditor:
             # Then get non-hidden files/dirs, excluding hidden files at all levels
             # We need to exclude both files/dirs starting with . and files/dirs under hidden dirs
             _, stdout, stderr = run_shell_cmd(
-                rf"find -L {path} -maxdepth 2 -not -path '*/\.*'",
+                rf"find -L {path} -maxdepth 2 -not -path '*/\.*' | sort",
                 truncate_notice=DIRECTORY_CONTENT_TRUNCATED_NOTICE,
             )
             if not stderr:
