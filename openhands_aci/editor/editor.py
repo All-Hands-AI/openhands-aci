@@ -189,8 +189,18 @@ class OHEditor:
                 truncate_notice=DIRECTORY_CONTENT_TRUNCATED_NOTICE,
             )
             if not stderr:
+                # Add trailing slashes to directories
+                paths = stdout.strip().split('\n') if stdout.strip() else []
+                formatted_paths = []
+                for p in paths:
+                    if Path(p).is_dir():
+                        formatted_paths.append(f'{p}/')
+                    else:
+                        formatted_paths.append(p)
+
                 msg = [
-                    f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n{stdout}"
+                    f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n"
+                    + '\n'.join(formatted_paths)
                 ]
                 if hidden_count > 0:
                     msg.append(
