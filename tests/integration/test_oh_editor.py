@@ -216,7 +216,7 @@ def test_str_replace_nonexistent_string(editor):
     )
 
 
-def test_str_replace_with_empty_string(editor):
+def test_str_replace_with_empty_new_str(editor):
     editor, test_file = editor
     test_file.write_text('Line 1\nLine to remove\nLine 3')
     result = editor(
@@ -227,6 +227,22 @@ def test_str_replace_with_empty_string(editor):
     )
     assert isinstance(result, CLIResult)
     assert test_file.read_text() == 'Line 1\nLine 3'
+
+
+def test_str_replace_with_empty_old_str(editor):
+    editor, test_file = editor
+    test_file.write_text('Line 1\nLine 2\nLine 3')
+    with pytest.raises(ToolError) as exc_info:
+        editor(
+            command='str_replace',
+            path=str(test_file),
+            old_str='',
+            new_str='New string',
+        )
+    assert (
+        str(exc_info.value.message)
+        == """No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3]. Please ensure it is unique."""
+    )
 
 
 def test_str_replace_with_none_old_str(editor):
