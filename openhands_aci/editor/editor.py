@@ -459,6 +459,9 @@ class OHEditor:
                 path=str(path),
                 reason='File appears to be binary. Only text files can be edited.',
             )
+        
+        # If the file is not binary, it's considered a valid text file
+        return
 
     def read_file(
         self,
