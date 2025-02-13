@@ -329,26 +329,19 @@ class OHEditor:
 
         # Create temporary file for the new content
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
-            # Copy lines before insert point and save them for history
-            history_lines = []
+            line_count = 0
             with open(path, 'r') as f:
-                for i, line in enumerate(f, 1):
-                    if i > insert_line:
-                        break
-                    temp_file.write(line.expandtabs())
-                    history_lines.append(line)
+                for line in f:
+                    line_count += 1
+                    if line_count == insert_line:
+                        temp_file.write(new_str)
+                        temp_file.write('\n')
+                    temp_file.write(line)
 
-            # Insert new content
-            for line in new_str_lines:
-                temp_file.write(line + '\n')
-
-            # Copy remaining lines and save them for history
-            with open(path, 'r') as f:
-                for i, line in enumerate(f, 1):
-                    if i <= insert_line:
-                        continue
-                    temp_file.write(line.expandtabs())
-                    history_lines.append(line)
+            if insert_line > line_count:
+                temp_file.write('\n' * (insert_line - line_count))
+                temp_file.write(new_str)
+                temp_file.write('\n')
 
         # Move temporary file to original location
         shutil.move(temp_file.name, path)
@@ -361,12 +354,9 @@ class OHEditor:
         )
         snippet = self.read_file(path, start_line=start_line, end_line=end_line)
 
-        # Save history - we already have the lines in memory
-        file_text = ''.join(history_lines)
-        self._history_manager.add_history(path, file_text)
-
-        # Read new content for result
-        new_file_text = self.read_file(path)
+        # Save history
+        old_content = self.read_file(path)
+        self._history_manager.add_history(path, old_content)
 
         success_message = f'The file {path} has been edited. '
         success_message += self._make_output(
@@ -377,7 +367,8 @@ class OHEditor:
 
         if enable_linting:
             # Run linting on the changes
-            lint_results = self._run_linting(file_text, new_file_text, path)
+            new_content = self.read_file(path)
+            lint_results = self._run_linting(old_content, new_content, path)
             success_message += '\n' + lint_results + '\n'
 
         success_message += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
@@ -385,8 +376,8 @@ class OHEditor:
             output=success_message,
             prev_exist=True,
             path=str(path),
-            old_content=file_text,
-            new_content=new_file_text,
+            old_content=old_content,
+            new_content=self.read_file(path),
         )
 
     def validate_path(self, command: Command, path: Path) -> None:
