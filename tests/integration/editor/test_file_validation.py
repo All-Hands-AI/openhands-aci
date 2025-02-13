@@ -5,15 +5,22 @@ from openhands_aci.editor import file_editor
 from .conftest import parse_result
 
 
+import os
+from pathlib import Path
+
 def test_file_validation(temp_file):
     """Test file validation for various file types."""
+    # Ensure temp_file has .sql suffix
+    temp_file_sql = Path(temp_file).with_suffix('.sql')
+    os.rename(temp_file, temp_file_sql)
+
     # Test binary file
-    with open(temp_file, 'wb') as f:
+    with open(temp_file_sql, 'wb') as f:
         f.write(b'Some text\x00with binary\x00content')
 
     result = file_editor(
         command='view',
-        path=temp_file,
+        path=str(temp_file_sql),
         enable_linting=False,
     )
     result_json = parse_result(result)
@@ -21,12 +28,12 @@ def test_file_validation(temp_file):
 
     # Test large file
     large_size = 11 * 1024 * 1024  # 11MB
-    with open(temp_file, 'w') as f:
+    with open(temp_file_sql, 'w') as f:
         f.write('x' * large_size)
 
     result = file_editor(
         command='view',
-        path=temp_file,
+        path=str(temp_file_sql),
         enable_linting=False,
     )
     result_json = parse_result(result)
@@ -39,12 +46,12 @@ def test_file_validation(temp_file):
     FROM users
     WHERE id = 1;
     """
-    with open(temp_file, 'w') as f:
+    with open(temp_file_sql, 'w') as f:
         f.write(sql_content)
 
     result = file_editor(
         command='view',
-        path=temp_file,
+        path=str(temp_file_sql),
         enable_linting=False,
     )
     result_json = parse_result(result)

@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 from typing import Literal, get_args
 
+from binaryornot.check import is_binary
 from openhands_aci.linter import DefaultLinter
 from openhands_aci.utils.shell import run_shell_cmd
 
@@ -462,8 +463,6 @@ class OHEditor:
             )
 
         # Check if file is binary using binaryornot
-        from binaryornot.check import is_binary
-
         if is_binary(str(path)):
             raise FileValidationError(
                 path=str(path),
