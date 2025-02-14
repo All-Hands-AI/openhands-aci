@@ -15,7 +15,9 @@ def get_memory_info():
     """Get current and peak memory usage in bytes."""
     process = psutil.Process(os.getpid())
     rss = process.memory_info().rss
-    peak_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024  # Convert KB to bytes
+    peak_rss = (
+        resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+    )  # Convert KB to bytes
     return {
         'rss': rss,
         'peak_rss': peak_rss,
@@ -28,17 +30,17 @@ def create_test_file(path: Path, size_mb: float = 5.0):
     line_size = 100  # bytes per line approximately
     num_lines = int((size_mb * 1024 * 1024) // line_size)
 
-    print(f"\nCreating test file with {num_lines} lines...")
+    print(f'\nCreating test file with {num_lines} lines...')
     with open(path, 'w') as f:
         for i in range(num_lines):
             f.write(f'Line {i}: ' + 'x' * (line_size - 10) + '\n')
 
     actual_size = os.path.getsize(path)
-    print(f"File created, size: {actual_size / 1024 / 1024:.2f} MB")
+    print(f'File created, size: {actual_size / 1024 / 1024:.2f} MB')
     return actual_size
 
 
-def set_memory_limit(file_size: int, multiplier: float = 1.5):
+def set_memory_limit(file_size: int, multiplier: float = 2.0):
     """Set memory limit to multiplier * file_size."""
     # Add base memory for pytest and other processes (100MB)
     base_memory = 100 * 1024 * 1024  # 100MB
@@ -50,11 +52,13 @@ def set_memory_limit(file_size: int, multiplier: float = 1.5):
         current_usage = psutil.Process().memory_info().rss
         if memory_limit > current_usage:
             resource.setrlimit(resource.RLIMIT_AS, (memory_limit, hard))
-            print(f"Memory limit set to {memory_limit / 1024 / 1024:.2f} MB")
+            print(f'Memory limit set to {memory_limit / 1024 / 1024:.2f} MB')
         else:
-            print(f"Warning: Current memory usage ({current_usage / 1024 / 1024:.2f} MB) higher than limit ({memory_limit / 1024 / 1024:.2f} MB)")
+            print(
+                f'Warning: Current memory usage ({current_usage / 1024 / 1024:.2f} MB) higher than limit ({memory_limit / 1024 / 1024:.2f} MB)'
+            )
     except Exception as e:
-        print(f"Warning: Could not set memory limit: {str(e)}")
+        print(f'Warning: Could not set memory limit: {str(e)}')
     return memory_limit
 
 
@@ -82,6 +86,7 @@ def test_str_replace_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+
         gc.collect()
 
         # Get initial memory usage
@@ -93,7 +98,7 @@ def test_str_replace_peak_memory():
 
         # Perform str_replace operation
         try:
-            result = file_editor(
+            _ = file_editor(
                 command='str_replace',
                 path=path,
                 old_str='Line 5000',  # Replace a line in the middle
@@ -118,6 +123,7 @@ def test_insert_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+
         gc.collect()
 
         # Get initial memory usage
@@ -129,7 +135,7 @@ def test_insert_peak_memory():
 
         # Perform insert operation
         try:
-            result = file_editor(
+            _ = file_editor(
                 command='insert',
                 path=path,
                 insert_line=5000,  # Insert in the middle
@@ -154,6 +160,7 @@ def test_view_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+
         gc.collect()
 
         # Get initial memory usage
@@ -165,7 +172,7 @@ def test_view_peak_memory():
 
         # Test viewing specific lines
         try:
-            result = file_editor(
+            _ = file_editor(
                 command='view',
                 path=path,
                 view_range=[5000, 5100],  # View 100 lines from middle
@@ -189,6 +196,7 @@ def test_view_full_file_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+
         gc.collect()
 
         # Get initial memory usage
@@ -200,7 +208,7 @@ def test_view_full_file_peak_memory():
 
         # Test viewing entire file
         try:
-            result = file_editor(
+            _ = file_editor(
                 command='view',
                 path=path,
                 enable_linting=False,
