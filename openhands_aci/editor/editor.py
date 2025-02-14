@@ -1,10 +1,11 @@
-import mimetypes
 import os
 import re
 import shutil
 import tempfile
 from pathlib import Path
 from typing import Literal, get_args
+
+from binaryornot.check import is_binary
 
 from openhands_aci.linter import DefaultLinter
 from openhands_aci.utils.shell import run_shell_cmd
@@ -461,26 +462,11 @@ class OHEditor:
                 reason=f'File is too large ({file_size / 1024 / 1024:.1f}MB). Maximum allowed size is {int(max_size / 1024 / 1024)}MB.',
             )
 
-        # Check if file is binary
-        mime_type, _ = mimetypes.guess_type(str(path))
-        if mime_type is None:
-            # If mime_type is None, try to detect if it's binary by reading first chunk
-            try:
-                chunk = open(path, 'rb').read(1024)
-                if b'\0' in chunk:  # Common way to detect binary files
-                    raise FileValidationError(
-                        path=str(path),
-                        reason='File appears to be binary. Only text files can be edited.',
-                    )
-            except Exception as e:
-                raise FileValidationError(
-                    path=str(path), reason=f'Error checking file type: {str(e)}'
-                )
-        elif not mime_type.startswith('text/'):
-            # Known non-text mime type
+        # Check file type
+        if is_binary(str(path)):
             raise FileValidationError(
                 path=str(path),
-                reason=f'File type {mime_type} is not supported. Only text files can be edited.',
+                reason='File appears to be binary. Only text files can be edited.',
             )
 
     def read_file(
