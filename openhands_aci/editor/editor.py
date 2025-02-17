@@ -462,12 +462,21 @@ class OHEditor:
                 reason=f'File is too large ({file_size / 1024 / 1024:.1f}MB). Maximum allowed size is {int(max_size / 1024 / 1024)}MB.',
             )
 
+        import psutil
+
+        process = psutil.Process(os.getpid())
+        print(
+            f'Memory before is_binary: {process.memory_info().rss / 1024 / 1024:.2f}MB'
+        )
         # Check file type
         if is_binary(str(path)):
             raise FileValidationError(
                 path=str(path),
                 reason='File appears to be binary. Only text files can be edited.',
             )
+        print(
+            f'Memory after is_binary: {process.memory_info().rss / 1024 / 1024:.2f}MB'
+        )
 
     def read_file(
         self,
