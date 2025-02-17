@@ -1,5 +1,5 @@
 # Workflow that runs Python integration tests
-name: Run Python Integration Tests
+name: Run Python Memory Profiling
 
 on:
   push:
@@ -33,6 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --with test
+          poetry run pip install memory_profiler
         env:
           POETRY_VIRTUALENVS_CREATE: false
       - name: Run tests
