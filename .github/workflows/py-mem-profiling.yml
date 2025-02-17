@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --with test
-          poetry run pip install memory_profiler
+          poetry run pip install memory-profiler
         env:
           POETRY_VIRTUALENVS_CREATE: false
       - name: Run tests
