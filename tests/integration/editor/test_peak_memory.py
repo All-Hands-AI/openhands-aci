@@ -40,7 +40,7 @@ def create_test_file(path: Path, size_mb: float = 5.0):
     return actual_size
 
 
-def set_memory_limit(file_size: int, multiplier: float = 2.0):
+def set_memory_limit(file_size: int, multiplier: float = 1.5):
     """Set memory limit to multiplier * file_size."""
     # Add base memory for pytest and other processes (100MB)
     base_memory = 100 * 1024 * 1024  # 100MB
@@ -121,6 +121,12 @@ def test_insert_peak_memory():
         path = Path(temp_file.name)
         file_size = create_test_file(path)
 
+        process = psutil.Process(os.getpid())
+        print('Memory details before operation:')
+        print(f'RSS: {process.memory_info().rss / 1024 / 1024:.2f} MB')
+        print(f'VMS: {process.memory_info().vms / 1024 / 1024:.2f} MB')
+        print(f'Shared: {process.memory_info().shared / 1024 / 1024:.2f} MB')
+
         # Force Python to release file handles and clear buffers
         import gc
 
@@ -142,9 +148,11 @@ def test_insert_peak_memory():
                 new_str='New line inserted\n' * 10,
                 enable_linting=False,
             )
-        except MemoryError:
+        except MemoryError as e:
+            print(f'Detailed error info: {str(e)}')
             pytest.fail('Memory limit exceeded - peak memory usage too high')
         except Exception as e:
+            print(f'Detailed error info: {str(e)}')
             if 'Cannot allocate memory' in str(e):
                 pytest.fail('Memory limit exceeded - peak memory usage too high')
             raise
