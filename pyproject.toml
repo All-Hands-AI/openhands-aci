@@ -23,6 +23,7 @@ diskcache = "^5.6.3"
 flake8 = "*"
 whatthepatch = "^1.0.6"
 binaryornot = "^0.4.4"
+memory-profiler = "^0.61.0"
 
 
 [tool.poetry.group.dev.dependencies]
