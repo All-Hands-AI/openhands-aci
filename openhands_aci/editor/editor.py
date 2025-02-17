@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal, get_args
 
 from binaryornot.check import is_binary
+from memory_profiler import profile
 
 from openhands_aci.linter import DefaultLinter
 from openhands_aci.utils.shell import run_shell_cmd
@@ -440,6 +441,7 @@ class OHEditor:
             new_content=old_text,
         )
 
+    @profile
     def validate_file(self, path: Path) -> None:
         """
         Validate a file for reading or editing operations.
