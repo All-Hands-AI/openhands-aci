@@ -7,7 +7,6 @@ from pathlib import Path
 
 import psutil
 import pytest
-from memory_profiler import profile
 
 from openhands_aci.editor import file_editor
 
@@ -116,7 +115,6 @@ def test_str_replace_peak_memory():
         check_memory_usage(initial['max'], file_size, 'str_replace')
 
 
-@profile
 def test_insert_peak_memory():
     """Test that insert operation has reasonable peak memory usage."""
     with tempfile.NamedTemporaryFile() as temp_file:

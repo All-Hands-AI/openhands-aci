@@ -1,8 +1,6 @@
 import json
 import uuid
 
-from memory_profiler import profile
-
 from .editor import Command, OHEditor
 from .exceptions import ToolError
 from .results import ToolResult
@@ -19,7 +17,6 @@ def _make_api_tool_result(tool_result: ToolResult) -> str:
     return tool_result.output
 
 
-@profile
 def file_editor(
     command: Command,
     path: str,
