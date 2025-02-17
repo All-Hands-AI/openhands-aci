@@ -86,7 +86,9 @@ def test_str_replace_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+        import sys
 
+        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
@@ -129,7 +131,9 @@ def test_insert_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+        import sys
 
+        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
@@ -169,7 +173,9 @@ def test_view_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+        import sys
 
+        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
@@ -205,7 +211,9 @@ def test_view_full_file_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
+        import sys
 
+        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
