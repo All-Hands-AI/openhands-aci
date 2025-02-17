@@ -40,7 +40,7 @@ def create_test_file(path: Path, size_mb: float = 5.0):
     return actual_size
 
 
-def set_memory_limit(file_size: int, multiplier: float = 2.0):
+def set_memory_limit(file_size: int, multiplier: float = 1.5):
     """Set memory limit to multiplier * file_size."""
     # Add base memory for pytest and other processes (100MB)
     base_memory = 100 * 1024 * 1024  # 100MB
