@@ -47,11 +47,13 @@ def set_memory_limit(file_size: int, multiplier: float = 2.0):
     memory_limit = int(file_size * multiplier + base_memory)
     try:
         # Get current limits
-        soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+        # soft, _ = resource.getrlimit(resource.RLIMIT_AS)
         # Only set limit if it's higher than current usage
         current_usage = psutil.Process().memory_info().rss
         if memory_limit > current_usage:
-            resource.setrlimit(resource.RLIMIT_AS, (memory_limit, hard))
+            resource.setrlimit(
+                resource.RLIMIT_AS, (memory_limit, resource.RLIM_INFINITY)
+            )
             print(f'Memory limit set to {memory_limit / 1024 / 1024:.2f} MB')
         else:
             print(
@@ -86,9 +88,7 @@ def test_str_replace_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
-        import sys
 
-        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
@@ -131,9 +131,7 @@ def test_insert_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
-        import sys
 
-        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
@@ -162,7 +160,7 @@ def test_insert_peak_memory():
             raise
 
         check_memory_usage(initial['max'], file_size, 'insert')
-        assert 1 + 1 == 3
+        # assert 1 + 1 == 3
 
 
 def test_view_peak_memory():
@@ -173,9 +171,7 @@ def test_view_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
-        import sys
 
-        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
@@ -211,9 +207,7 @@ def test_view_full_file_peak_memory():
 
         # Force Python to release file handles and clear buffers
         import gc
-        import sys
 
-        sys.modules.clear()  # Clear module cache
         gc.collect()
 
         # Get initial memory usage
