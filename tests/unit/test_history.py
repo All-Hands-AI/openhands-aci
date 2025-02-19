@@ -1,9 +1,14 @@
 """Tests for file history management."""
 
 import tempfile
+import logging
 from pathlib import Path
 
 from openhands_aci.editor.history import FileHistoryManager
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def test_default_history_limit():
@@ -100,3 +105,50 @@ def test_clear_history_resets_counter():
         metadata = manager.get_metadata(path)
         assert len(metadata['entries']) == 1
         assert metadata['entries'][0] == 0  # First key should be 0
+
+def test_get_last_history_removes_entry():
+    """Test that get_last_history removes the latest entry."""
+    with tempfile.NamedTemporaryFile() as temp_file:
+        path = Path(temp_file.name)
+        manager = FileHistoryManager()
+
+        # Add some entries
+        manager.add_history(path, 'content1')
+        manager.add_history(path, 'content2')
+        manager.add_history(path, 'content3')
+
+        print("After adding entries:")
+        print(manager.get_metadata(path))
+
+        # Get the last history entry
+        last_entry = manager.get_last_history(path)
+        assert last_entry == 'content3'
+
+        print("After get_last_history:")
+        print(manager.get_metadata(path))
+
+        # Check that the entry has been removed
+        metadata = manager.get_metadata(path)
+        print("Final metadata:")
+        print(metadata)
+        assert len(metadata['entries']) == 2
+
+        # Get the last history entry again
+        last_entry = manager.get_last_history(path)
+        assert last_entry == 'content2'
+
+        # Check that the entry has been removed
+        metadata = manager.get_metadata(path)
+        assert len(metadata['entries']) == 1
+
+        # Get the last history entry one more time
+        last_entry = manager.get_last_history(path)
+        assert last_entry == 'content1'
+
+        # Check that all entries have been removed
+        metadata = manager.get_metadata(path)
+        assert len(metadata['entries']) == 0
+
+        # Try to get last history when there are no entries
+        last_entry = manager.get_last_history(path)
+        assert last_entry is None
