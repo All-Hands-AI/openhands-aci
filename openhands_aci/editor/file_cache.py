@@ -1,6 +1,5 @@
 import os
 import json
-import hashlib
 from pathlib import Path
 from typing import Any, Optional
 
@@ -10,17 +9,14 @@ class FileCache:
         self.directory.mkdir(parents=True, exist_ok=True)
         self.size_limit = size_limit
 
-    def _hash_key(self, key: str) -> str:
-        return hashlib.md5(key.encode()).hexdigest()
-
     def _get_file_path(self, key: str) -> Path:
-        hashed_key = self._hash_key(key)
-        return self.directory / f"{hashed_key}.json"
+        return self.directory / key
 
     def set(self, key: str, value: Any) -> None:
         file_path = self._get_file_path(key)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, 'w') as f:
-            json.dump({"key": key, "value": value}, f)
+            json.dump({"value": value}, f)
 
     def get(self, key: str, default: Any = None) -> Any:
         file_path = self._get_file_path(key)
@@ -28,25 +24,32 @@ class FileCache:
             return default
         with open(file_path, 'r') as f:
             data = json.load(f)
-            return data["value"] if data["key"] == key else default
+            return data["value"]
 
     def delete(self, key: str) -> None:
         file_path = self._get_file_path(key)
         if file_path.exists():
             os.remove(file_path)
+            # Remove empty parent directories
+            parent = file_path.parent
+            while parent != self.directory and not any(parent.iterdir()):
+                parent.rmdir()
+                parent = parent.parent
 
     def clear(self) -> None:
-        for file in self.directory.glob("*.json"):
-            os.remove(file)
+        for item in sorted(self.directory.glob('**/*'), key=lambda x: len(str(x.relative_to(self.directory))), reverse=True):
+            if item.is_file():
+                os.remove(item)
+            elif item.is_dir() and item != self.directory:
+                os.rmdir(item)
 
     def __contains__(self, key: str) -> bool:
         return self._get_file_path(key).exists()
 
     def __len__(self) -> int:
-        return len(list(self.directory.glob("*.json")))
+        return sum(1 for _ in self.directory.glob('**/*') if _.is_file())
 
     def __iter__(self):
-        for file in self.directory.glob("*.json"):
-            with open(file, 'r') as f:
-                data = json.load(f)
-                yield data["key"]
+        for file in self.directory.glob('**/*'):
+            if file.is_file():
+                yield str(file.relative_to(self.directory))
