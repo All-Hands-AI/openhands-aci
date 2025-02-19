@@ -64,38 +64,38 @@ class FileHistoryManager:
         self.cache.set(metadata_key, metadata)
         self.logger.debug(f"add_history: Final metadata for {file_path}: {metadata}")
 
-    def get_last_history(self, file_path: Path) -> Optional[str]:
-        """Get and remove the most recent history entry for a file."""
+    def pop_last_history(self, file_path: Path) -> Optional[str]:
+        """Pop and return the most recent history entry for a file."""
         metadata_key = self._get_metadata_key(file_path)
         metadata = self.cache.get(metadata_key, {'entries': [], 'counter': 0})
         entries = metadata['entries']
 
-        self.logger.debug(f"get_last_history: Initial metadata for {file_path}: {metadata}")
+        self.logger.debug(f"pop_last_history: Initial metadata for {file_path}: {metadata}")
 
         if not entries:
-            self.logger.debug("get_last_history: No entries found")
+            self.logger.debug("pop_last_history: No entries found")
             return None
 
-        # Get and remove the last entry
+        # Pop and remove the last entry
         last_counter = entries.pop()
         history_key = self._get_history_key(file_path, last_counter)
         content = self.cache.get(history_key)
 
-        self.logger.debug(f"get_last_history: Removed entry with counter {last_counter}")
+        self.logger.debug(f"pop_last_history: Removed entry with counter {last_counter}")
 
         if content is None:
             self.logger.warning(f'History entry not found for {file_path}')
         else:
             # Remove the entry from the cache
             self.cache.delete(history_key)
-            self.logger.debug(f"get_last_history: Deleted history key {history_key}")
+            self.logger.debug(f"pop_last_history: Deleted history key {history_key}")
 
         # Update metadata
         metadata['entries'] = entries
         self.cache.set(metadata_key, metadata)
 
-        self.logger.debug(f"get_last_history: Updated metadata for {file_path}: {metadata}")
-        self.logger.debug(f"get_last_history: Remaining entries: {len(entries)}")
+        self.logger.debug(f"pop_last_history: Updated metadata for {file_path}: {metadata}")
+        self.logger.debug(f"pop_last_history: Remaining entries: {len(entries)}")
 
         return content
 

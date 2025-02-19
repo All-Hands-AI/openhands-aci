@@ -106,8 +106,8 @@ def test_clear_history_resets_counter():
         assert len(metadata['entries']) == 1
         assert metadata['entries'][0] == 0  # First key should be 0
 
-def test_get_last_history_removes_entry():
-    """Test that get_last_history removes the latest entry."""
+def test_pop_last_history_removes_entry():
+    """Test that pop_last_history removes the latest entry."""
     with tempfile.NamedTemporaryFile() as temp_file:
         path = Path(temp_file.name)
         manager = FileHistoryManager()
@@ -120,11 +120,11 @@ def test_get_last_history_removes_entry():
         print("After adding entries:")
         print(manager.get_metadata(path))
 
-        # Get the last history entry
-        last_entry = manager.get_last_history(path)
+        # Pop the last history entry
+        last_entry = manager.pop_last_history(path)
         assert last_entry == 'content3'
 
-        print("After get_last_history:")
+        print("After pop_last_history:")
         print(manager.get_metadata(path))
 
         # Check that the entry has been removed
@@ -133,22 +133,22 @@ def test_get_last_history_removes_entry():
         print(metadata)
         assert len(metadata['entries']) == 2
 
-        # Get the last history entry again
-        last_entry = manager.get_last_history(path)
+        # Pop the last history entry again
+        last_entry = manager.pop_last_history(path)
         assert last_entry == 'content2'
 
         # Check that the entry has been removed
         metadata = manager.get_metadata(path)
         assert len(metadata['entries']) == 1
 
-        # Get the last history entry one more time
-        last_entry = manager.get_last_history(path)
+        # Pop the last history entry one more time
+        last_entry = manager.pop_last_history(path)
         assert last_entry == 'content1'
 
         # Check that all entries have been removed
         metadata = manager.get_metadata(path)
         assert len(metadata['entries']) == 0
 
-        # Try to get last history when there are no entries
-        last_entry = manager.get_last_history(path)
+        # Try to pop last history when there are no entries
+        last_entry = manager.pop_last_history(path)
         assert last_entry is None
