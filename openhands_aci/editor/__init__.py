@@ -8,6 +8,8 @@ from .file_cache import FileCache
 
 _GLOBAL_EDITOR = OHEditor()
 
+__all__ = ['Command', 'OHEditor', 'ToolError', 'ToolResult', 'FileCache', 'file_editor']
+
 
 def _make_api_tool_result(tool_result: ToolResult) -> str:
     """Convert an agent ToolResult to an API ToolResultBlockParam."""
