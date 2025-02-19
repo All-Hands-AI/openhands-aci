@@ -356,6 +356,35 @@ def test_undo_edit(editor):
     assert 'test file' in test_file.read_text()  # Original content restored
 
 
+def test_multiple_undo_edits(editor):
+    editor, test_file = editor
+    # Make an edit to be undone
+    _ = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='test file',
+        new_str='sample file v1',
+    )
+    # Make another edit to be undone
+    _ = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='sample file v1',
+        new_str='sample file v2',
+    )
+    # Undo the last edit
+    result = editor(command='undo_edit', path=str(test_file))
+    assert isinstance(result, CLIResult)
+    assert 'Last edit to' in result.output
+    assert 'sample file v1' in test_file.read_text()  # Previous content restored
+
+    # Undo the first edit
+    result = editor(command='undo_edit', path=str(test_file))
+    assert isinstance(result, CLIResult)
+    assert 'Last edit to' in result.output
+    assert 'test file' in test_file.read_text()  # Original content restored
+
+
 def test_validate_path_invalid(editor):
     editor, test_file = editor
     invalid_file = test_file.parent / 'nonexistent.txt'
