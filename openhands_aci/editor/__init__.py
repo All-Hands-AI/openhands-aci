@@ -44,8 +44,6 @@ def file_editor(
 
     formatted_output_and_error = _make_api_tool_result(result)
     marker_id = uuid.uuid4().hex
-    
-    result_dict = result.to_dict(extra_field={'formatted_output_and_error': formatted_output_and_error})
-    serialized_result = json.dumps(result_dict)
-    
-    return f"<oh_aci_output_{marker_id}>\n{serialized_result}\n</oh_aci_output_{marker_id}>"
+    return f"""<oh_aci_output_{marker_id}>
+{json.dumps(result.to_dict(extra_field={'formatted_output_and_error': formatted_output_and_error}), indent=2)}
+</oh_aci_output_{marker_id}>"""

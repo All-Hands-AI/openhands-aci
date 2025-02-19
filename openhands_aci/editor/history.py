@@ -20,6 +20,7 @@ class FileHistoryManager:
 
         Notes:
             - Each file's history is limited to the last N entries to conserve memory
+            - The file cache is limited to prevent excessive disk usage
             - Older entries are automatically removed when limits are exceeded
         """
         self.max_history_per_file = max_history_per_file
