@@ -29,8 +29,15 @@ class FileCache:
         content_size = len(content.encode('utf-8'))
 
         if self.size_limit is not None:
-            while self.current_size + content_size > self.size_limit and len(self) > 1:
-                self._evict_oldest()
+            if file_path.exists():
+                old_size = file_path.stat().st_size
+                size_diff = content_size - old_size
+                if size_diff > 0:
+                    while self.current_size + size_diff > self.size_limit and len(self) > 1:
+                        self._evict_oldest(file_path)
+            else:
+                while self.current_size + content_size > self.size_limit and len(self) > 1:
+                    self._evict_oldest(file_path)
 
         if file_path.exists():
             self.current_size -= file_path.stat().st_size
@@ -43,9 +50,9 @@ class FileCache:
             file_path, (time.time(), time.time())
         )  # Update access and modification time
 
-    def _evict_oldest(self):
+    def _evict_oldest(self, exclude_path: Optional[Path] = None):
         oldest_file = min(
-            (f for f in self.directory.glob('*.json') if f.is_file()),
+            (f for f in self.directory.glob('*.json') if f.is_file() and f != exclude_path),
             key=os.path.getctime,
         )
         self.current_size -= oldest_file.stat().st_size
