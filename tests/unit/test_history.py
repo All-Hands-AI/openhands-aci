@@ -16,12 +16,12 @@ def test_default_history_limit():
         for i in range(6):
             manager.add_history(path, f'content{i}')
 
-        # Get the entries list
-        entries = manager.cache.get(f'{str(path)}:entries', [])
-        assert len(entries) == 5  # Should only keep last 5 entries
+        # Get the metadata
+        metadata = manager.get_metadata(path)
+        assert len(metadata["entries"]) == 5  # Should only keep last 5 entries
         # First entry should be content1, last should be content5
-        assert manager.cache.get(entries[0]).startswith('content1')
-        assert manager.cache.get(entries[-1]).startswith('content5')
+        assert manager.get_all_history(path)[0].startswith('content1')
+        assert manager.get_all_history(path)[-1].startswith('content5')
 
 
 def test_history_keys_are_unique():
@@ -35,19 +35,19 @@ def test_history_keys_are_unique():
         manager.add_history(path, 'content2')
         manager.add_history(path, 'content3')
 
-        # Get the entries list
-        entries = manager.cache.get(f'{str(path)}:entries', [])
-        assert len(entries) == 2  # Should only keep last 2 entries
+        # Get the metadata
+        metadata = manager.get_metadata(path)
+        assert len(metadata["entries"]) == 2  # Should only keep last 2 entries
 
         # Keys should be unique and sequential
-        keys = [int(k.split(':')[-1]) for k in entries]
+        keys = metadata["entries"]
         assert len(set(keys)) == len(keys)  # All keys should be unique
         assert sorted(keys) == keys  # Keys should be sequential
 
         # Add another entry
         manager.add_history(path, 'content4')
-        new_entries = manager.cache.get(f'{str(path)}:entries', [])
-        new_keys = [int(k.split(':')[-1]) for k in new_entries]
+        new_metadata = manager.get_metadata(path)
+        new_keys = new_metadata["entries"]
 
         # New key should be greater than all previous keys
         assert min(new_keys) > min(keys)
@@ -69,9 +69,9 @@ def test_history_counter_persists():
         manager2 = FileHistoryManager(history_dir=Path(temp_dir))
         manager2.add_history(path, 'content3')
 
-        # Get all entries
-        entries = manager2.cache.get(f'{str(path)}:entries', [])
-        keys = [int(k.split(':')[-1]) for k in entries]
+        # Get metadata
+        metadata = manager2.get_metadata(path)
+        keys = metadata["entries"]
 
         # Keys should be sequential even across instances
         assert len(set(keys)) == len(keys)  # All keys should be unique
@@ -92,11 +92,11 @@ def test_clear_history_resets_counter():
         manager.clear_history(path)
 
         # Counter should be reset
-        counter = manager.cache.get(f'{str(path)}:counter', None)
-        assert counter is None
+        metadata = manager.get_metadata(path)
+        assert metadata["counter"] == 0
 
         # Adding new entries should start from 0
         manager.add_history(path, 'new_content')
-        entries = manager.cache.get(f'{str(path)}:entries', [])
-        assert len(entries) == 1
-        assert entries[0].endswith(':0')  # First key should end with :0
+        metadata = manager.get_metadata(path)
+        assert len(metadata["entries"]) == 1
+        assert metadata["entries"][0] == 0  # First key should be 0

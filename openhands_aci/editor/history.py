@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Optional, List
 import logging
 from .file_cache import FileCache
-# Remove the following line if it exists:
-# from diskcache import Cache
 
 class FileHistoryManager:
     """Manages file edit history with disk-based storage and memory constraints."""
@@ -51,7 +49,7 @@ class FileHistoryManager:
         metadata["counter"] += 1
 
         # Keep only last N entries
-        if len(metadata["entries"]) > self.max_history_per_file:
+        while len(metadata["entries"]) > self.max_history_per_file:
             old_counter = metadata["entries"].pop(0)
             old_history_key = self._get_history_key(file_path, old_counter)
             self.cache.delete(old_history_key)
@@ -89,7 +87,7 @@ class FileHistoryManager:
             self.cache.delete(history_key)
 
         # Clear metadata
-        self.cache.delete(metadata_key)
+        self.cache.set(metadata_key, {"entries": [], "counter": 0})
 
     def get_all_history(self, file_path: Path) -> List[str]:
         """Get all history entries for a file."""
@@ -105,3 +103,8 @@ class FileHistoryManager:
                 history.append(content)
 
         return history
+
+    def get_metadata(self, file_path: Path):
+        """Get metadata for a file (for testing purposes)."""
+        metadata_key = self._get_metadata_key(file_path)
+        return self.cache.get(metadata_key, {"entries": [], "counter": 0})

@@ -42,7 +42,6 @@ class FileCache:
         oldest_file = min((f for f in self.directory.glob('*.json') if f.is_file()), key=os.path.getctime)
         self.current_size -= oldest_file.stat().st_size
         os.remove(oldest_file)
-        self._update_current_size()  # Update current size after eviction
 
     def get(self, key: str, default: Any = None) -> Any:
         file_path = self._get_file_path(key)
@@ -50,6 +49,7 @@ class FileCache:
             return default
         with open(file_path, 'r') as f:
             data = json.load(f)
+            os.utime(file_path, (time.time(), time.time()))  # Update access time
             return data["value"]
 
     def delete(self, key: str) -> None:
