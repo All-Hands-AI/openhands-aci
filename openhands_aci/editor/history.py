@@ -30,6 +30,9 @@ class FileHistoryManager:
             history_dir = Path(tempfile.mkdtemp(prefix='oh_editor_history_'))
         self.cache = FileCache(str(history_dir))
         self.logger = logging.getLogger(__name__)
+        print(f"Available methods: {[method for method in dir(self) if not method.startswith('_')]}")
+        print(f"pop_last_history in dir(self): {'pop_last_history' in dir(self)}")
+        print(f"pop_last_history method: {getattr(self, 'pop_last_history', None)}")
 
     def _get_metadata_key(self, file_path: Path) -> str:
         return f'{file_path}.metadata'

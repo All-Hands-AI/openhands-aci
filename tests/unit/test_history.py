@@ -4,11 +4,33 @@ import tempfile
 import logging
 from pathlib import Path
 
+import importlib
+import openhands_aci
+import openhands_aci.editor
+import openhands_aci.editor.history
+importlib.reload(openhands_aci)
+importlib.reload(openhands_aci.editor)
+importlib.reload(openhands_aci.editor.history)
 from openhands_aci.editor.history import FileHistoryManager
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Force reload of FileHistoryManager
+importlib.reload(openhands_aci.editor.history)
+FileHistoryManager = openhands_aci.editor.history.FileHistoryManager
+
+# Print available methods
+print(f"Available methods: {[method for method in dir(FileHistoryManager) if not method.startswith('_')]}")
+print(f"pop_last_history in FileHistoryManager: {'pop_last_history' in dir(FileHistoryManager)}")
+print(f"pop_last_history method: {getattr(FileHistoryManager, 'pop_last_history', None)}")
+
+# Create an instance and print its methods
+instance = FileHistoryManager()
+print(f"Instance methods: {[method for method in dir(instance) if not method.startswith('_')]}")
+print(f"pop_last_history in instance: {'pop_last_history' in dir(instance)}")
+print(f"pop_last_history method in instance: {getattr(instance, 'pop_last_history', None)}")
 
 
 def test_default_history_limit():
