@@ -242,13 +242,19 @@ def test_large_history_insert():
         for i in range(100):
             try:
                 manager.add_history(Path(f'test_file_{i}.txt'), large_content)
-            except sqlite3.OperationalError as e:
-                print(f"SQLite error occurred: {str(e)}")
-                print(f"Error details: {e.__dict__}")
-                pytest.fail(f"SQLite error occurred on iteration {i}: {str(e)}")
+            except Exception as e:
+                pytest.fail(f"Error occurred on iteration {i}: {str(e)}")
 
         # Check if we can still retrieve the last entry
         last_content = manager.get_last_history(Path('test_file_99.txt'))
         assert last_content == large_content, "Failed to retrieve the last inserted content"
+
+        # Check if the number of history files is correct
+        history_files = list(history_dir.glob('*.history'))
+        assert len(history_files) == 100, f"Expected 100 history files, but found {len(history_files)}"
+
+        # Check if the metadata files are created
+        metadata_files = list(history_dir.glob('*.metadata.json'))
+        assert len(metadata_files) == 100, f"Expected 100 metadata files, but found {len(metadata_files)}"
 
     print("Large history insert test completed successfully")
