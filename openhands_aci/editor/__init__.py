@@ -45,9 +45,15 @@ def file_editor(
     formatted_output_and_error = _make_api_tool_result(result)
     marker_id = uuid.uuid4().hex
 
-    result_dict = result.to_dict(
-        extra_field={'formatted_output_and_error': formatted_output_and_error}
-    )
-    json_content = json.dumps(result_dict, indent=2)
+    def json_generator():
+        yield '{'
+        first = True
+        for key, value in result.to_dict().items():
+            if not first:
+                yield ','
+            first = False
+            yield f'"{key}": {json.dumps(value)}'
+        yield f', "formatted_output_and_error": {json.dumps(formatted_output_and_error)}'
+        yield '}'
 
-    return f'<oh_aci_output_{marker_id}>\n{json_content}\n</oh_aci_output_{marker_id}>'
+    return f'<oh_aci_output_{marker_id}>\n' + ''.join(json_generator()) + f'\n</oh_aci_output_{marker_id}>'
