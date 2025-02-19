@@ -9,7 +9,9 @@ from openhands_aci.editor import FileCache
 @pytest.fixture
 def file_cache():
     with tempfile.TemporaryDirectory() as temp_dir:
-        yield FileCache(temp_dir)
+        cache = FileCache(temp_dir)
+        yield cache
+        cache.clear()
 
 
 def test_init(file_cache):

@@ -84,7 +84,7 @@ class FileCache:
                 for f in self.directory.glob('*.json')
                 if f.is_file() and f != exclude_path
             ),
-            key=os.path.getctime,
+            key=os.path.getmtime,
         )
         evicted_size = oldest_file.stat().st_size
         self.current_size -= evicted_size
