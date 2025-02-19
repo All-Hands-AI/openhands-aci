@@ -241,14 +241,15 @@ def test_large_history_insert():
         large_content = 'x' * (1024 * 1024)
 
         # Try to insert the large content multiple times
-        for i in range(100):
+        num_files = 100
+        for i in range(num_files):
             try:
                 manager.add_history(Path(f'test_file_{i}.txt'), large_content)
             except Exception as e:
                 pytest.fail(f'Error occurred on iteration {i}: {str(e)}')
 
         # Check if we can still retrieve the last entry
-        last_content = manager.pop_last_history(Path('test_file_99.txt'))
+        last_content = manager.pop_last_history(Path(f'test_file_{num_files - 1}.txt'))
         assert (
             last_content == large_content
         ), 'Failed to retrieve the last inserted content'
@@ -256,7 +257,7 @@ def test_large_history_insert():
         # Check if the number of cache entries is correct
         cache_entries = list(manager.cache)
         assert (
-            len(cache_entries) == 200
-        ), f'Expected 200 cache entries (100 content + 100 metadata), but found {len(cache_entries)}'
-
-    print('Large history insert test completed successfully')
+            len(cache_entries)
+            == num_files * 2
+            - 1  # The cache entry for file content was removed, only metadata remains
+        ), f'Expected {num_files * 2 - 1} cache entries ({num_files - 1} content + {num_files} metadata), but found {len(cache_entries)}'

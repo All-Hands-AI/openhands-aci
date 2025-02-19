@@ -13,13 +13,6 @@ logger = logging.getLogger(__name__)
 
 # Create an instance and print its methods
 instance = FileHistoryManager()
-print(
-    f"Instance methods: {[method for method in dir(instance) if not method.startswith('_')]}"
-)
-print(f"pop_last_history in instance: {'pop_last_history' in dir(instance)}")
-print(
-    f"pop_last_history method in instance: {getattr(instance, 'pop_last_history', None)}"
-)
 
 
 def test_default_history_limit():
