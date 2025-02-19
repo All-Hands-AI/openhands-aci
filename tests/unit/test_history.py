@@ -1,18 +1,9 @@
 """Tests for file history management."""
 
-import logging
 import tempfile
 from pathlib import Path
 
 from openhands_aci.editor.history import FileHistoryManager
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-
-# Create an instance and print its methods
-instance = FileHistoryManager()
 
 
 def test_default_history_limit():
@@ -122,20 +113,12 @@ def test_pop_last_history_removes_entry():
         manager.add_history(path, 'content2')
         manager.add_history(path, 'content3')
 
-        print('After adding entries:')
-        print(manager.get_metadata(path))
-
         # Pop the last history entry
         last_entry = manager.pop_last_history(path)
         assert last_entry == 'content3'
 
-        print('After pop_last_history:')
-        print(manager.get_metadata(path))
-
         # Check that the entry has been removed
         metadata = manager.get_metadata(path)
-        print('Final metadata:')
-        print(metadata)
         assert len(metadata['entries']) == 2
 
         # Pop the last history entry again
