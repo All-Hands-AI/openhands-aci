@@ -1,9 +1,10 @@
-import os
-import json
 import hashlib
+import json
+import os
+import time
 from pathlib import Path
 from typing import Any, Optional
-import time
+
 
 class FileCache:
     def __init__(self, directory: str, size_limit: Optional[int] = None):
@@ -15,14 +16,16 @@ class FileCache:
 
     def _get_file_path(self, key: str) -> Path:
         hashed_key = hashlib.sha256(key.encode()).hexdigest()
-        return self.directory / f"{hashed_key}.json"
+        return self.directory / f'{hashed_key}.json'
 
     def _update_current_size(self):
-        self.current_size = sum(f.stat().st_size for f in self.directory.glob('*.json') if f.is_file())
+        self.current_size = sum(
+            f.stat().st_size for f in self.directory.glob('*.json') if f.is_file()
+        )
 
     def set(self, key: str, value: Any) -> None:
         file_path = self._get_file_path(key)
-        content = json.dumps({"key": key, "value": value})
+        content = json.dumps({'key': key, 'value': value})
         content_size = len(content.encode('utf-8'))
 
         if self.size_limit is not None:
@@ -36,10 +39,15 @@ class FileCache:
             f.write(content)
 
         self.current_size += content_size
-        os.utime(file_path, (time.time(), time.time()))  # Update access and modification time
+        os.utime(
+            file_path, (time.time(), time.time())
+        )  # Update access and modification time
 
     def _evict_oldest(self):
-        oldest_file = min((f for f in self.directory.glob('*.json') if f.is_file()), key=os.path.getctime)
+        oldest_file = min(
+            (f for f in self.directory.glob('*.json') if f.is_file()),
+            key=os.path.getctime,
+        )
         self.current_size -= oldest_file.stat().st_size
         os.remove(oldest_file)
 
@@ -50,7 +58,7 @@ class FileCache:
         with open(file_path, 'r') as f:
             data = json.load(f)
             os.utime(file_path, (time.time(), time.time()))  # Update access time
-            return data["value"]
+            return data['value']
 
     def delete(self, key: str) -> None:
         file_path = self._get_file_path(key)
@@ -75,7 +83,7 @@ class FileCache:
             if file.is_file():
                 with open(file, 'r') as f:
                     data = json.load(f)
-                    yield data["key"]
+                    yield data['key']
 
     def __getitem__(self, key: str) -> Any:
         return self.get(key)

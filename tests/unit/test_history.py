@@ -18,7 +18,7 @@ def test_default_history_limit():
 
         # Get the metadata
         metadata = manager.get_metadata(path)
-        assert len(metadata["entries"]) == 5  # Should only keep last 5 entries
+        assert len(metadata['entries']) == 5  # Should only keep last 5 entries
         # First entry should be content1, last should be content5
         assert manager.get_all_history(path)[0].startswith('content1')
         assert manager.get_all_history(path)[-1].startswith('content5')
@@ -37,17 +37,17 @@ def test_history_keys_are_unique():
 
         # Get the metadata
         metadata = manager.get_metadata(path)
-        assert len(metadata["entries"]) == 2  # Should only keep last 2 entries
+        assert len(metadata['entries']) == 2  # Should only keep last 2 entries
 
         # Keys should be unique and sequential
-        keys = metadata["entries"]
+        keys = metadata['entries']
         assert len(set(keys)) == len(keys)  # All keys should be unique
         assert sorted(keys) == keys  # Keys should be sequential
 
         # Add another entry
         manager.add_history(path, 'content4')
         new_metadata = manager.get_metadata(path)
-        new_keys = new_metadata["entries"]
+        new_keys = new_metadata['entries']
 
         # New key should be greater than all previous keys
         assert min(new_keys) > min(keys)
@@ -71,7 +71,7 @@ def test_history_counter_persists():
 
         # Get metadata
         metadata = manager2.get_metadata(path)
-        keys = metadata["entries"]
+        keys = metadata['entries']
 
         # Keys should be sequential even across instances
         assert len(set(keys)) == len(keys)  # All keys should be unique
@@ -93,10 +93,10 @@ def test_clear_history_resets_counter():
 
         # Counter should be reset
         metadata = manager.get_metadata(path)
-        assert metadata["counter"] == 0
+        assert metadata['counter'] == 0
 
         # Adding new entries should start from 0
         manager.add_history(path, 'new_content')
         metadata = manager.get_metadata(path)
-        assert len(metadata["entries"]) == 1
-        assert metadata["entries"][0] == 0  # First key should be 0
+        assert len(metadata['entries']) == 1
+        assert metadata['entries'][0] == 0  # First key should be 0
