@@ -249,12 +249,8 @@ def test_large_history_insert():
         last_content = manager.get_last_history(Path('test_file_99.txt'))
         assert last_content == large_content, "Failed to retrieve the last inserted content"
 
-        # Check if the number of history files is correct
-        history_files = list(history_dir.glob('*.history'))
-        assert len(history_files) == 100, f"Expected 100 history files, but found {len(history_files)}"
-
-        # Check if the metadata files are created
-        metadata_files = list(history_dir.glob('*.metadata.json'))
-        assert len(metadata_files) == 100, f"Expected 100 metadata files, but found {len(metadata_files)}"
+        # Check if the number of cache entries is correct
+        cache_entries = list(manager.cache)
+        assert len(cache_entries) == 200, f"Expected 200 cache entries (100 content + 100 metadata), but found {len(cache_entries)}"
 
     print("Large history insert test completed successfully")
