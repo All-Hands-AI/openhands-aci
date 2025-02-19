@@ -426,7 +426,7 @@ class OHEditor:
         Implement the undo_edit command.
         """
         current_text = self.read_file(path).expandtabs()
-        old_text = self._history_manager.get_last_history(path)
+        old_text = self._history_manager.pop_last_history(path)
         if old_text is None:
             raise ToolError(f'No edit history found for {path}.')
 

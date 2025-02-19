@@ -248,7 +248,7 @@ def test_large_history_insert():
                 pytest.fail(f'Error occurred on iteration {i}: {str(e)}')
 
         # Check if we can still retrieve the last entry
-        last_content = manager.get_last_history(Path('test_file_99.txt'))
+        last_content = manager.pop_last_history(Path('test_file_99.txt'))
         assert (
             last_content == large_content
         ), 'Failed to retrieve the last inserted content'
