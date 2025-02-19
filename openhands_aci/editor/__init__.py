@@ -56,4 +56,8 @@ def file_editor(
         yield f', "formatted_output_and_error": {json.dumps(formatted_output_and_error)}'
         yield '}'
 
-    return f'<oh_aci_output_{marker_id}>\n' + ''.join(json_generator()) + f'\n</oh_aci_output_{marker_id}>'
+    return (
+        f'<oh_aci_output_{marker_id}>\n'
+        + ''.join(json_generator())
+        + f'\n</oh_aci_output_{marker_id}>'
+    )
