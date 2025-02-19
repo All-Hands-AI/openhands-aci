@@ -44,6 +44,16 @@ def file_editor(
 
     formatted_output_and_error = _make_api_tool_result(result)
     marker_id = uuid.uuid4().hex
-    return f"""<oh_aci_output_{marker_id}>
-{json.dumps(result.to_dict(extra_field={'formatted_output_and_error': formatted_output_and_error}), indent=2)}
-</oh_aci_output_{marker_id}>"""
+    
+    # Serialize the result in chunks to avoid memory issues
+    chunk_size = 1024 * 1024  # 1 MB chunks
+    result_dict = result.to_dict(extra_field={'formatted_output_and_error': formatted_output_and_error})
+    serialized_result = json.dumps(result_dict)
+    
+    output = f"<oh_aci_output_{marker_id}>\n"
+    for i in range(0, len(serialized_result), chunk_size):
+        chunk = serialized_result[i:i+chunk_size]
+        output += chunk
+    output += f"\n</oh_aci_output_{marker_id}>"
+    
+    return output

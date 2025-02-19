@@ -221,3 +221,34 @@ def test_view_full_file_peak_memory():
             raise
 
         check_memory_usage(initial['max'], file_size, 'view_full')
+
+def test_large_history_insert():
+    """Test inserting a large amount of data into the history cache."""
+    from openhands_aci.editor.history import FileHistoryManager
+    import tempfile
+    import logging
+
+    # Set up logging
+    logging.basicConfig(level=logging.ERROR)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        history_dir = Path(temp_dir)
+        manager = FileHistoryManager(max_history_per_file=1000, history_dir=history_dir)
+
+        # Create a large string (about 1MB)
+        large_content = 'x' * (1024 * 1024)
+
+        # Try to insert the large content multiple times
+        for i in range(100):
+            try:
+                manager.add_history(Path(f'test_file_{i}.txt'), large_content)
+            except sqlite3.OperationalError as e:
+                print(f"SQLite error occurred: {str(e)}")
+                print(f"Error details: {e.__dict__}")
+                pytest.fail(f"SQLite error occurred on iteration {i}: {str(e)}")
+
+        # Check if we can still retrieve the last entry
+        last_content = manager.get_last_history(Path('test_file_99.txt'))
+        assert last_content == large_content, "Failed to retrieve the last inserted content"
+
+    print("Large history insert test completed successfully")

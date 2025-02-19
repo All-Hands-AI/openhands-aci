@@ -3,6 +3,8 @@
 import tempfile
 from pathlib import Path
 from typing import Optional
+import logging
+import sqlite3
 
 from diskcache import Cache
 
@@ -28,6 +30,7 @@ class FileHistoryManager:
         if history_dir is None:
             history_dir = Path(tempfile.mkdtemp(prefix='oh_editor_history_'))
         self.cache = Cache(str(history_dir), size_limit=5e8)  # 500MB size limit
+        self.logger = logging.getLogger(__name__)
 
     def add_history(self, file_path: Path, content: str):
         """Add a new history entry for a file."""
@@ -40,18 +43,23 @@ class FileHistoryManager:
 
         # Add new entry with monotonically increasing counter
         entry_key = f'{key}:{counter}'
-        self.cache.set(entry_key, content)
-        entries.append(entry_key)
-        counter += 1
+        try:
+            self.cache.set(entry_key, content)
+            entries.append(entry_key)
+            counter += 1
 
-        # Keep only last N entries
-        if len(entries) > self.max_history_per_file:
-            old_key = entries.pop(0)
-            self.cache.delete(old_key)
+            # Keep only last N entries
+            if len(entries) > self.max_history_per_file:
+                old_key = entries.pop(0)
+                self.cache.delete(old_key)
 
-        # Update entries list and counter
-        self.cache.set(entries_key, entries)
-        self.cache.set(counter_key, counter)
+            # Update entries list and counter
+            self.cache.set(entries_key, entries)
+            self.cache.set(counter_key, counter)
+        except sqlite3.OperationalError as e:
+            self.logger.error(f"SQLite error occurred: {str(e)}")
+            self.logger.error(f"Error details: {e.__dict__}")
+            raise
 
     def get_last_history(self, file_path: Path) -> Optional[str]:
         """Get the most recent history entry for a file."""
