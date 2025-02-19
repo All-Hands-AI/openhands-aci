@@ -4,6 +4,7 @@ import uuid
 from .editor import Command, OHEditor
 from .exceptions import ToolError
 from .results import ToolResult
+from .file_cache import FileCache
 
 _GLOBAL_EDITOR = OHEditor()
 
