@@ -33,10 +33,15 @@ class FileCache:
                 old_size = file_path.stat().st_size
                 size_diff = content_size - old_size
                 if size_diff > 0:
-                    while self.current_size + size_diff > self.size_limit and len(self) > 1:
+                    while (
+                        self.current_size + size_diff > self.size_limit
+                        and len(self) > 1
+                    ):
                         self._evict_oldest(file_path)
             else:
-                while self.current_size + content_size > self.size_limit and len(self) > 1:
+                while (
+                    self.current_size + content_size > self.size_limit and len(self) > 1
+                ):
                     self._evict_oldest(file_path)
 
         if file_path.exists():
@@ -52,7 +57,11 @@ class FileCache:
 
     def _evict_oldest(self, exclude_path: Optional[Path] = None):
         oldest_file = min(
-            (f for f in self.directory.glob('*.json') if f.is_file() and f != exclude_path),
+            (
+                f
+                for f in self.directory.glob('*.json')
+                if f.is_file() and f != exclude_path
+            ),
             key=os.path.getctime,
         )
         self.current_size -= oldest_file.stat().st_size

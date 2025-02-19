@@ -1,4 +1,5 @@
 """Tests for basic file editor operations."""
+
 import json
 import re
 
