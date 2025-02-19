@@ -138,12 +138,18 @@ def test_delete_removes_empty_directories(file_cache):
 
 def test_size_limit():
     with tempfile.TemporaryDirectory() as temp_dir:
-        cache = FileCache(temp_dir, size_limit=100)  # 100 bytes limit
-        cache.set('key1', 'x' * 50)  # 50 bytes
-        cache.set('key2', 'y' * 60)  # 60 bytes
+        cache = FileCache(temp_dir, size_limit=100)
+        val1 = 'x' * 50
+        val2 = 'y' * 60
+        cache.set('key1', val1)
+        cache.set('key2', val2)
 
+        assert len(val1.encode('utf-8')) <= 100
+        assert len(val1.encode('utf-8') + val2.encode('utf-8')) > 100
+
+        val3 = 'z' * 40
         # This should cause key1 to be evicted
-        cache.set('key3', 'z' * 40)  # 40 bytes
+        cache.set('key3', val3)  # 40 bytes
 
         assert 'key1' not in cache
         assert 'key2' in cache
