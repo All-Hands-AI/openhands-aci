@@ -18,6 +18,11 @@ An Agent-Computer Interface (ACI) designed for software development agents [Open
   - Diff generation and analysis
   - Logging functionality
 
+- **Vision Tools**: Image analysis and visual QA capabilities
+  - Image inspection and analysis
+  - Visual question answering using BLIP2 model
+  - Support for local files, URLs, and base64 encoded images
+
 ## Installation
 
 ```bash
@@ -36,7 +41,8 @@ poetry add openhands-aci
 openhands_aci/
 ├── editor/           # Code editing functionality
 ├── linter/           # Code linting capabilities
-└── utils/            # Utility functions
+├── utils/            # Utility functions
+└── vision/           # Vision and image analysis tools
 ```
 
 ## Development
