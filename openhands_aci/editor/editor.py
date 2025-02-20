@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Literal, get_args
 
+import mdconvert
 from binaryornot.check import is_binary
 
 from openhands_aci.linter import DefaultLinter
@@ -58,6 +59,7 @@ class OHEditor:
         self._max_file_size = (
             (max_file_size_mb or self.MAX_FILE_SIZE_MB) * 1024 * 1024
         )  # Convert to bytes
+        self.markdown_converter = mdconvert.MarkdownConverter()
 
     def __call__(
         self,
@@ -246,56 +248,57 @@ class OHEditor:
             )
 
         # Validate file and count lines
-        self.validate_file(path)
-        num_lines = self._count_lines(path)
+        # self.validate_file(path)
+        # num_lines = self._count_lines(path)
 
         start_line = 1
-        if not view_range:
-            file_content = self.read_file(path)
+        # TODO: ignore view range option as of now
+        if True:
+            file_content = self.read_file_markdown(path)
             return CLIResult(
                 output=self._make_output(file_content, str(path), start_line),
                 path=str(path),
                 prev_exist=True,
             )
 
-        if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                'It should be a list of two integers.',
-            )
+        # if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
+        #     raise EditorToolParameterInvalidError(
+        #         'view_range',
+        #         view_range,
+        #         'It should be a list of two integers.',
+        #     )
 
-        start_line, end_line = view_range
-        if start_line < 1 or start_line > num_lines:
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                f'Its first element `{start_line}` should be within the range of lines of the file: {[1, num_lines]}.',
-            )
+        # start_line, end_line = view_range
+        # if start_line < 1 or start_line > num_lines:
+        #     raise EditorToolParameterInvalidError(
+        #         'view_range',
+        #         view_range,
+        #         f'Its first element `{start_line}` should be within the range of lines of the file: {[1, num_lines]}.',
+        #     )
 
-        if end_line > num_lines:
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                f'Its second element `{end_line}` should be smaller than the number of lines in the file: `{num_lines}`.',
-            )
+        # if end_line > num_lines:
+        #     raise EditorToolParameterInvalidError(
+        #         'view_range',
+        #         view_range,
+        #         f'Its second element `{end_line}` should be smaller than the number of lines in the file: `{num_lines}`.',
+        #     )
 
-        if end_line != -1 and end_line < start_line:
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                f'Its second element `{end_line}` should be greater than or equal to the first element `{start_line}`.',
-            )
+        # if end_line != -1 and end_line < start_line:
+        #     raise EditorToolParameterInvalidError(
+        #         'view_range',
+        #         view_range,
+        #         f'Its second element `{end_line}` should be greater than or equal to the first element `{start_line}`.',
+        #     )
 
-        if end_line == -1:
-            end_line = num_lines
+        # if end_line == -1:
+        #     end_line = num_lines
 
-        file_content = self.read_file(path, start_line=start_line, end_line=end_line)
-        return CLIResult(
-            path=str(path),
-            output=self._make_output(file_content, str(path), start_line),
-            prev_exist=True,
-        )
+        # file_content = self.read_file(path, start_line=start_line, end_line=end_line)
+        # return CLIResult(
+        #     path=str(path),
+        #     output=self._make_output(file_content, str(path), start_line),
+        #     prev_exist=True,
+        # )
 
     def write_file(self, path: Path, file_text: str) -> None:
         """
@@ -483,7 +486,7 @@ class OHEditor:
             start_line: Optional start line number (1-based). If provided with end_line, only reads that range.
             end_line: Optional end line number (1-based). Must be provided with start_line.
         """
-        self.validate_file(path)
+        # self.validate_file(path)
         try:
             if start_line is not None and end_line is not None:
                 # Read only the specified line range
@@ -505,6 +508,13 @@ class OHEditor:
                     return ''.join(f)
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to read {path}') from None
+
+    def read_file_markdown(self, path: Path) -> str:
+        try:
+            result = self.markdown_converter.convert(str(path))
+            return result.text_content
+        except Exception as e:
+            raise ToolError(f'Error in converting file to Markdown: {str(e)}')
 
     def _make_output(
         self,
