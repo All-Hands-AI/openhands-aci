@@ -5,9 +5,10 @@ import tempfile
 from pathlib import Path
 from typing import Literal, get_args
 
-import mdconvert
+# import openhands_aci.editor.mdconvert
 from binaryornot.check import is_binary
 
+from openhands_aci.editor.mdconvert import MarkdownConverter  # type: ignore
 from openhands_aci.linter import DefaultLinter
 from openhands_aci.utils.shell import run_shell_cmd
 
@@ -19,6 +20,8 @@ from .exceptions import (
     ToolError,
 )
 from .history import FileHistoryManager
+
+# from .mdconvert import MarkdownConverter
 from .prompts import DIRECTORY_CONTENT_TRUNCATED_NOTICE, FILE_CONTENT_TRUNCATED_NOTICE
 from .results import CLIResult, maybe_truncate
 
@@ -59,7 +62,7 @@ class OHEditor:
         self._max_file_size = (
             (max_file_size_mb or self.MAX_FILE_SIZE_MB) * 1024 * 1024
         )  # Convert to bytes
-        self.markdown_converter = mdconvert.MarkdownConverter()
+        self.markdown_converter = MarkdownConverter()
 
     def __call__(
         self,
@@ -539,7 +542,7 @@ class OHEditor:
             ]
         )
         return (
-            f"Here's the result of running `cat -n` on {snippet_description}:\n"
+            f"Here's the content of the file {snippet_description} displayed in Markdown format:\n"
             + snippet_content
             + '\n'
         )

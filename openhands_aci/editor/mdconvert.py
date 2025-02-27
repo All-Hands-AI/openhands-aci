@@ -19,7 +19,7 @@ from urllib.parse import parse_qs, quote, unquote, urlparse, urlunparse
 import mammoth
 import markdownify
 import pandas as pd
-import pdfminer
+import pdfminer.high_level as high_level
 import pptx
 
 # File-format detection
@@ -395,7 +395,7 @@ class PdfConverter(DocumentConverter):
 
         return DocumentConverterResult(
             title=None,
-            text_content=pdfminer.high_level.extract_text(local_path),
+            text_content=high_level.extract_text(local_path),
         )
 
 
