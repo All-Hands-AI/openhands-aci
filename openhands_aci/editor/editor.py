@@ -5,7 +5,6 @@ import tempfile
 from pathlib import Path
 from typing import Literal, get_args
 
-# import openhands_aci.editor.mdconvert
 from binaryornot.check import is_binary
 
 from openhands_aci.editor.mdconvert import MarkdownConverter  # type: ignore
@@ -20,8 +19,6 @@ from .exceptions import (
     ToolError,
 )
 from .history import FileHistoryManager
-
-# from .mdconvert import MarkdownConverter
 from .prompts import DIRECTORY_CONTENT_TRUNCATED_NOTICE, FILE_CONTENT_TRUNCATED_NOTICE
 from .results import CLIResult, maybe_truncate
 
