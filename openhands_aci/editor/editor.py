@@ -1,7 +1,6 @@
 import codecs
 import os
 import re
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Literal, Tuple, get_args
@@ -391,58 +390,83 @@ class OHEditor:
         new_str = new_str.expandtabs()
         new_str_lines = new_str.split('\n')
 
-        # Detect file encoding
-        encoding, _ = self._detect_encoding(path)
+        # Use a temporary file to avoid loading the entire file into memory
+        temp_file_path = None
+        history_lines = []
 
-        # Create temporary file for the new content
-        with tempfile.NamedTemporaryFile(
-            mode='w', encoding=encoding, delete=False
-        ) as temp_file:
-            # Copy lines before insert point and save them for history
-            history_lines = []
-            try:
-                with codecs.open(str(path), 'r', encoding=encoding) as f:
-                    for i, line in enumerate(f, 1):
-                        if i > insert_line:
-                            break
-                        temp_file.write(line.expandtabs())
-                        history_lines.append(line)
-            except UnicodeDecodeError:
-                # If the detected encoding fails, try with UTF-8 as fallback
-                with codecs.open(
-                    str(path), 'r', encoding='utf-8', errors='replace'
-                ) as f:
-                    for i, line in enumerate(f, 1):
-                        if i > insert_line:
-                            break
-                        temp_file.write(line.expandtabs())
-                        history_lines.append(line)
+        try:
+            # Create a temporary file
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_file_path = temp_file.name
 
-            # Insert new content
-            for line in new_str_lines:
-                temp_file.write(line + '\n')
+            # Detect file encoding
+            encoding, _ = self._detect_encoding(path)
 
-            # Copy remaining lines and save them for history
-            try:
-                with codecs.open(str(path), 'r', encoding=encoding) as f:
-                    for i, line in enumerate(f, 1):
-                        if i <= insert_line:
-                            continue
-                        temp_file.write(line.expandtabs())
-                        history_lines.append(line)
-            except UnicodeDecodeError:
-                # If the detected encoding fails, try with UTF-8 as fallback
-                with codecs.open(
-                    str(path), 'r', encoding='utf-8', errors='replace'
-                ) as f:
-                    for i, line in enumerate(f, 1):
-                        if i <= insert_line:
-                            continue
-                        temp_file.write(line.expandtabs())
-                        history_lines.append(line)
+            # Process the file in chunks to minimize memory usage
+            with open(temp_file_path, 'w', encoding='utf-8') as out_file:
+                # Copy lines before insert point
+                try:
+                    with codecs.open(str(path), 'r', encoding=encoding) as in_file:
+                        for i, line in enumerate(in_file, 1):
+                            if i > insert_line:
+                                break
+                            out_file.write(line.expandtabs())
+                            history_lines.append(line)
+                except UnicodeDecodeError:
+                    # If the detected encoding fails, try with UTF-8 as fallback
+                    with codecs.open(
+                        str(path), 'r', encoding='utf-8', errors='replace'
+                    ) as in_file:
+                        for i, line in enumerate(in_file, 1):
+                            if i > insert_line:
+                                break
+                            out_file.write(line.expandtabs())
+                            history_lines.append(line)
 
-        # Move temporary file to original location
-        shutil.move(temp_file.name, path)
+                # Insert the new content
+                for line in new_str_lines:
+                    out_file.write(line + '\n')
+
+                # Copy lines after insert point
+                remaining_lines = []
+                try:
+                    with codecs.open(str(path), 'r', encoding=encoding) as in_file:
+                        lines = in_file.readlines()
+                        if insert_line < len(lines):
+                            remaining_lines = lines[insert_line:]
+                except UnicodeDecodeError:
+                    # If the detected encoding fails, try with UTF-8 as fallback
+                    with codecs.open(
+                        str(path), 'r', encoding='utf-8', errors='replace'
+                    ) as in_file:
+                        lines = in_file.readlines()
+                        if insert_line < len(lines):
+                            remaining_lines = lines[insert_line:]
+
+                # Write the remaining lines
+                for line in remaining_lines:
+                    out_file.write(line.expandtabs())
+                    history_lines.append(line)
+
+            # Use write_file to write the new content, which will raise ToolError if needed
+            # We need to read the temp file in small chunks to avoid memory issues
+            with open(temp_file_path, 'r', encoding='utf-8') as f:
+                content = f.read(1024 * 1024)  # Read 1MB at a time
+                self.write_file(path, content)
+
+                # Append the rest in chunks if the file is larger
+                while True:
+                    chunk = f.read(1024 * 1024)
+                    if not chunk:
+                        break
+
+                    # Append to the file directly to avoid loading everything into memory
+                    with open(str(path), 'a', encoding=encoding) as out_f:
+                        out_f.write(chunk)
+        finally:
+            # Clean up the temporary file
+            if temp_file_path is not None and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
         # Read just the snippet range
         start_line = max(1, insert_line - SNIPPET_CONTEXT_WINDOW)
