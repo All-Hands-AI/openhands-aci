@@ -1,9 +1,10 @@
+import codecs
 import os
 import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Literal, get_args
+from typing import Literal, Tuple, get_args
 
 from binaryornot.check import is_binary
 
@@ -110,12 +111,56 @@ class OHEditor:
             f'Unrecognized command {command}. The allowed commands for the {self.TOOL_NAME} tool are: {", ".join(get_args(Command))}'
         )
 
+    def _detect_encoding(self, path: Path) -> Tuple[str, bool]:
+        """
+        Detect file encoding by looking for coding declarations.
+        Returns a tuple of (encoding, has_declaration) where has_declaration
+        indicates if an explicit encoding declaration was found.
+        """
+        # Default to UTF-8
+        encoding = 'utf-8'
+        has_declaration = False
+
+        # Try to read the first two lines to check for encoding declaration
+        try:
+            with open(path, 'rb') as f:
+                for i, line in enumerate(f):
+                    if i > 1:  # Only check first two lines
+                        break
+                    # Look for coding declaration
+                    match = re.search(rb'coding[:=]\s*([-\w.]+)', line)
+                    if match:
+                        declared_encoding = match.group(1).decode('ascii')
+                        has_declaration = True
+
+                        # Verify the encoding is valid
+                        try:
+                            # Check if the encoding is recognized by Python
+                            codecs.lookup(declared_encoding)
+                            encoding = declared_encoding
+                        except LookupError:
+                            # If the encoding is not recognized, fall back to UTF-8
+                            pass
+
+                        break
+        except Exception:
+            # If there's any error, fall back to UTF-8
+            pass
+
+        return encoding, has_declaration
+
     def _count_lines(self, path: Path) -> int:
         """
         Count the number of lines in a file safely.
         """
-        with open(path) as f:
-            return sum(1 for _ in f)
+        encoding, _ = self._detect_encoding(path)
+        try:
+            with codecs.open(str(path), 'r', encoding=encoding) as f:
+                return sum(1 for _ in f)
+        except UnicodeDecodeError:
+            # If the detected encoding fails, try with UTF-8 as fallback
+            with codecs.open(str(path), 'r', encoding='utf-8', errors='replace') as f:
+                return sum(1 for _ in f)
 
     def str_replace(
         self, path: Path, old_str: str, new_str: str | None, enable_linting: bool
@@ -302,8 +347,27 @@ class OHEditor:
         Write the content of a file to a given path; raise a ToolError if an error occurs.
         """
         self.validate_file(path)
+
+        # If the file exists, detect its encoding to preserve it
+        encoding = 'utf-8'  # Default to UTF-8
+        if path.exists():
+            encoding, _ = self._detect_encoding(path)
+
         try:
-            path.write_text(file_text)
+            # Try to write with the detected encoding
+            with codecs.open(str(path), 'w', encoding=encoding) as f:
+                f.write(file_text)
+        except UnicodeEncodeError:
+            # If the encoding can't handle the content, fall back to UTF-8
+            # This can happen if the file has a declaration for a limited encoding
+            # but the content contains characters outside that encoding's range
+            try:
+                with codecs.open(str(path), 'w', encoding='utf-8') as f:
+                    f.write(file_text)
+            except Exception as e:
+                raise ToolError(
+                    f'Ran into {e} while trying to write to {path}'
+                ) from None
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to write to {path}') from None
 
@@ -327,28 +391,55 @@ class OHEditor:
         new_str = new_str.expandtabs()
         new_str_lines = new_str.split('\n')
 
+        # Detect file encoding
+        encoding, _ = self._detect_encoding(path)
+
         # Create temporary file for the new content
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode='w', encoding=encoding, delete=False
+        ) as temp_file:
             # Copy lines before insert point and save them for history
             history_lines = []
-            with open(path, 'r') as f:
-                for i, line in enumerate(f, 1):
-                    if i > insert_line:
-                        break
-                    temp_file.write(line.expandtabs())
-                    history_lines.append(line)
+            try:
+                with codecs.open(str(path), 'r', encoding=encoding) as f:
+                    for i, line in enumerate(f, 1):
+                        if i > insert_line:
+                            break
+                        temp_file.write(line.expandtabs())
+                        history_lines.append(line)
+            except UnicodeDecodeError:
+                # If the detected encoding fails, try with UTF-8 as fallback
+                with codecs.open(
+                    str(path), 'r', encoding='utf-8', errors='replace'
+                ) as f:
+                    for i, line in enumerate(f, 1):
+                        if i > insert_line:
+                            break
+                        temp_file.write(line.expandtabs())
+                        history_lines.append(line)
 
             # Insert new content
             for line in new_str_lines:
                 temp_file.write(line + '\n')
 
             # Copy remaining lines and save them for history
-            with open(path, 'r') as f:
-                for i, line in enumerate(f, 1):
-                    if i <= insert_line:
-                        continue
-                    temp_file.write(line.expandtabs())
-                    history_lines.append(line)
+            try:
+                with codecs.open(str(path), 'r', encoding=encoding) as f:
+                    for i, line in enumerate(f, 1):
+                        if i <= insert_line:
+                            continue
+                        temp_file.write(line.expandtabs())
+                        history_lines.append(line)
+            except UnicodeDecodeError:
+                # If the detected encoding fails, try with UTF-8 as fallback
+                with codecs.open(
+                    str(path), 'r', encoding='utf-8', errors='replace'
+                ) as f:
+                    for i, line in enumerate(f, 1):
+                        if i <= insert_line:
+                            continue
+                        temp_file.write(line.expandtabs())
+                        history_lines.append(line)
 
         # Move temporary file to original location
         shutil.move(temp_file.name, path)
@@ -484,16 +575,31 @@ class OHEditor:
             end_line: Optional end line number (1-based). Must be provided with start_line.
         """
         self.validate_file(path)
+
+        # Detect file encoding
+        encoding, has_declaration = self._detect_encoding(path)
+
         try:
             if start_line is not None and end_line is not None:
                 # Read only the specified line range
                 lines = []
-                with open(path, 'r') as f:
-                    for i, line in enumerate(f, 1):
-                        if i > end_line:
-                            break
-                        if i >= start_line:
-                            lines.append(line)
+                try:
+                    with codecs.open(str(path), 'r', encoding=encoding) as f:
+                        for i, line in enumerate(f, 1):
+                            if i > end_line:
+                                break
+                            if i >= start_line:
+                                lines.append(line)
+                except UnicodeDecodeError:
+                    # If the detected encoding fails, try with UTF-8 as fallback with error replacement
+                    with codecs.open(
+                        str(path), 'r', encoding='utf-8', errors='replace'
+                    ) as f:
+                        for i, line in enumerate(f, 1):
+                            if i > end_line:
+                                break
+                            if i >= start_line:
+                                lines.append(line)
                 return ''.join(lines)
             elif start_line is not None or end_line is not None:
                 raise ValueError(
@@ -501,8 +607,15 @@ class OHEditor:
                 )
             else:
                 # Use line-by-line reading to avoid loading entire file into memory
-                with open(path, 'r') as f:
-                    return ''.join(f)
+                try:
+                    with codecs.open(str(path), 'r', encoding=encoding) as f:
+                        return ''.join(f)
+                except UnicodeDecodeError:
+                    # If the detected encoding fails, try with UTF-8 as fallback with error replacement
+                    with codecs.open(
+                        str(path), 'r', encoding='utf-8', errors='replace'
+                    ) as f:
+                        return ''.join(f)
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to read {path}') from None
 
