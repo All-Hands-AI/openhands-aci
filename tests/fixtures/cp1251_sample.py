@@ -314,7 +314,7 @@ def str2py(value, type):
         return str2py(value)
     except ValidationError:
         raise
-    except:
+    except Exception:
         if value == '':
             return None
         raise ValidationError(err_msg or 'Incorrect data')
