@@ -3,6 +3,7 @@ import pytest
 from openhands_aci.editor.exceptions import (
     EditorToolParameterInvalidError,
     EditorToolParameterMissingError,
+    EncodingError,
     ToolError,
 )
 
@@ -49,3 +50,15 @@ def test_editor_tool_parameter_invalid_error_without_hint():
     assert exc_info.value.parameter == parameter
     assert exc_info.value.value == value
     assert exc_info.value.message == f'Invalid `{parameter}` parameter: {value}.'
+
+
+def test_encoding_error():
+    """Test EncodingError raises with correct message."""
+    path = '/path/to/file.txt'
+    with pytest.raises(EncodingError) as exc_info:
+        raise EncodingError(path)
+    assert exc_info.value.path == path
+    assert (
+        str(exc_info.value)
+        == f'The editor only supports UTF-8 encoding files, please use bash commands for files with other encoding: {path}'
+    )

@@ -39,3 +39,12 @@ class FileValidationError(ToolError):
         self.reason = reason
         self.message = f'File validation failed for {path}: {reason}'
         super().__init__(self.message)
+
+
+class EncodingError(ToolError):
+    """Raised when a file cannot be read due to encoding issues."""
+
+    def __init__(self, path: str):
+        self.path = path
+        self.message = f'The editor only supports UTF-8 encoding files, please use bash commands for files with other encoding: {path}'
+        super().__init__(self.message)

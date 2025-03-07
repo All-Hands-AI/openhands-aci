@@ -14,6 +14,7 @@ from .config import SNIPPET_CONTEXT_WINDOW
 from .exceptions import (
     EditorToolParameterInvalidError,
     EditorToolParameterMissingError,
+    EncodingError,
     FileValidationError,
     ToolError,
 )
@@ -114,8 +115,11 @@ class OHEditor:
         """
         Count the number of lines in a file safely.
         """
-        with open(path) as f:
-            return sum(1 for _ in f)
+        try:
+            with open(path, encoding='utf-8') as f:
+                return sum(1 for _ in f)
+        except UnicodeDecodeError:
+            raise EncodingError(str(path))
 
     def str_replace(
         self, path: Path, old_str: str, new_str: str | None, enable_linting: bool
@@ -303,7 +307,9 @@ class OHEditor:
         """
         self.validate_file(path)
         try:
-            path.write_text(file_text)
+            path.write_text(file_text, encoding='utf-8')
+        except UnicodeEncodeError:
+            raise EncodingError(str(path))
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to write to {path}') from None
 
@@ -331,24 +337,27 @@ class OHEditor:
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
             # Copy lines before insert point and save them for history
             history_lines = []
-            with open(path, 'r') as f:
-                for i, line in enumerate(f, 1):
-                    if i > insert_line:
-                        break
-                    temp_file.write(line.expandtabs())
-                    history_lines.append(line)
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    for i, line in enumerate(f, 1):
+                        if i > insert_line:
+                            break
+                        temp_file.write(line.expandtabs())
+                        history_lines.append(line)
 
-            # Insert new content
-            for line in new_str_lines:
-                temp_file.write(line + '\n')
+                # Insert new content
+                for line in new_str_lines:
+                    temp_file.write(line + '\n')
 
-            # Copy remaining lines and save them for history
-            with open(path, 'r') as f:
-                for i, line in enumerate(f, 1):
-                    if i <= insert_line:
-                        continue
-                    temp_file.write(line.expandtabs())
-                    history_lines.append(line)
+                # Copy remaining lines and save them for history
+                with open(path, 'r', encoding='utf-8') as f:
+                    for i, line in enumerate(f, 1):
+                        if i <= insert_line:
+                            continue
+                        temp_file.write(line.expandtabs())
+                        history_lines.append(line)
+            except UnicodeDecodeError:
+                raise EncodingError(str(path))
 
         # Move temporary file to original location
         shutil.move(temp_file.name, path)
@@ -488,7 +497,7 @@ class OHEditor:
             if start_line is not None and end_line is not None:
                 # Read only the specified line range
                 lines = []
-                with open(path, 'r') as f:
+                with open(path, 'r', encoding='utf-8') as f:
                     for i, line in enumerate(f, 1):
                         if i > end_line:
                             break
@@ -501,8 +510,10 @@ class OHEditor:
                 )
             else:
                 # Use line-by-line reading to avoid loading entire file into memory
-                with open(path, 'r') as f:
+                with open(path, 'r', encoding='utf-8') as f:
                     return ''.join(f)
+        except UnicodeDecodeError:
+            raise EncodingError(str(path))
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to read {path}') from None
 
