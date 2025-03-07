@@ -6,6 +6,7 @@ from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import (
     EditorToolParameterInvalidError,
     EditorToolParameterMissingError,
+    EncodingError,
     ToolError,
 )
 from openhands_aci.editor.prompts import (
@@ -592,3 +593,44 @@ def test_validate_path_suggests_absolute_path(editor):
     assert 'Maybe you meant' in error_message
     suggested_path = error_message.split('Maybe you meant ')[1].strip('?')
     assert Path(suggested_path).is_absolute()
+
+
+def test_non_utf8_encoding_error(tmp_path):
+    """Test that files with non-UTF-8 encoding raise EncodingError."""
+    editor = OHEditor()
+
+    # Create a file with cp1251 encoding declaration
+    cp1251_file = tmp_path / 'cp1251_file.py'
+
+    # Create a file with non-UTF-8 content that's still valid text
+    # We'll use cp1251 encoding for Russian text
+    russian_text = '# coding: cp1251\n\n# Русский текст в кодировке cp1251'
+
+    # Write the file with cp1251 encoding
+    with open(cp1251_file, 'wb') as f:
+        f.write(russian_text.encode('cp1251'))
+
+    # Test view command
+    with pytest.raises(EncodingError) as exc_info:
+        editor(command='view', path=str(cp1251_file))
+    assert 'The editor only supports UTF-8 encoding files' in str(exc_info.value)
+    assert 'please use bash commands for files with other encoding' in str(
+        exc_info.value
+    )
+
+    # Test str_replace command
+    with pytest.raises(EncodingError) as exc_info:
+        editor(
+            command='str_replace',
+            path=str(cp1251_file),
+            old_str='import re',
+            new_str='import re, sys',
+        )
+    assert 'The editor only supports UTF-8 encoding files' in str(exc_info.value)
+
+    # Test insert command
+    with pytest.raises(EncodingError) as exc_info:
+        editor(
+            command='insert', path=str(cp1251_file), insert_line=3, new_str='import sys'
+        )
+    assert 'The editor only supports UTF-8 encoding files' in str(exc_info.value)
