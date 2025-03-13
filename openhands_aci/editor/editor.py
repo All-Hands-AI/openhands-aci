@@ -60,6 +60,9 @@ class OHEditor:
             workspace_root: Root directory that serves as the current working directory for relative path
                            suggestions. Must be an absolute path. If None, no path suggestions will be
                            provided for relative paths.
+            workspace_root: Root directory that serves as the current working directory for relative path
+                           suggestions. Must be an absolute path. If None, no path suggestions will be
+                           provided for relative paths.
         """
         self._linter = DefaultLinter()
         self._history_manager = FileHistoryManager(max_history_per_file=10)
@@ -463,6 +466,10 @@ class OHEditor:
     def validate_path(self, command: Command, path: Path) -> None:
         """
         Check that the path/command combination is valid.
+
+        Validates:
+        1. Path is absolute
+        2. Path and command are compatible
 
         Validates:
         1. Path is absolute
