@@ -582,13 +582,26 @@ def test_view_large_file_with_truncation(editor, tmp_path):
     assert FILE_CONTENT_TRUNCATED_NOTICE in result.output
 
 
-def test_validate_path_suggests_absolute_path(editor):
+def test_validate_path_suggests_absolute_path(editor, tmp_path):
     editor, test_file = editor
+
+    # Since the editor fixture doesn't set workspace_root, we should not get a suggestion
     relative_path = test_file.name  # This is a relative path
     with pytest.raises(EditorToolParameterInvalidError) as exc_info:
         editor(command='view', path=relative_path)
     error_message = str(exc_info.value.message)
     assert 'The path should be an absolute path' in error_message
+    assert 'Maybe you meant' not in error_message
+
+    # Now create an editor with workspace_root
+    workspace_editor = OHEditor(workspace_root=str(test_file.parent))
+
+    # We should get a suggestion now
+    with pytest.raises(EditorToolParameterInvalidError) as exc_info:
+        workspace_editor(command='view', path=relative_path)
+    error_message = str(exc_info.value.message)
+    assert 'The path should be an absolute path' in error_message
     assert 'Maybe you meant' in error_message
     suggested_path = error_message.split('Maybe you meant ')[1].strip('?')
     assert Path(suggested_path).is_absolute()
+    assert str(test_file.parent) in suggested_path

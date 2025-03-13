@@ -48,11 +48,18 @@ class OHEditor:
     TOOL_NAME = 'oh_editor'
     MAX_FILE_SIZE_MB = 10  # Maximum file size in MB
 
-    def __init__(self, max_file_size_mb: int | None = None):
+    def __init__(
+        self,
+        max_file_size_mb: int | None = None,
+        workspace_root: str | None = None,
+    ):
         """Initialize the editor.
 
         Args:
             max_file_size_mb: Maximum file size in MB. If None, uses the default MAX_FILE_SIZE_MB.
+            workspace_root: Root directory that serves as the current working directory for relative path
+                           suggestions. Must be an absolute path. If None, no path suggestions will be
+                           provided for relative paths.
         """
         self._linter = DefaultLinter()
         self._history_manager = FileHistoryManager(max_history_per_file=10)
@@ -61,6 +68,17 @@ class OHEditor:
         )  # Convert to bytes
         # Initialize encoding manager
         self._encoding_manager = EncodingManager()
+        # Set cwd (current working directory) if workspace_root is provided
+        if workspace_root is not None:
+            workspace_path = Path(workspace_root)
+            # Ensure workspace_root is an absolute path
+            if not workspace_path.is_absolute():
+                raise ValueError(
+                    f'workspace_root must be an absolute path, got: {workspace_root}'
+                )
+            self._cwd = workspace_path
+        else:
+            self._cwd = None  # type: ignore
 
     def __call__(
         self,
@@ -445,15 +463,29 @@ class OHEditor:
     def validate_path(self, command: Command, path: Path) -> None:
         """
         Check that the path/command combination is valid.
+
+        Validates:
+        1. Path is absolute
+        2. Path and command are compatible
         """
         # Check if its an absolute path
         if not path.is_absolute():
-            suggested_path = Path.cwd() / path
+            suggestion_message = (
+                'The path should be an absolute path, starting with `/`.'
+            )
+
+            # Only suggest the absolute path if cwd is provided and the path exists
+            if self._cwd is not None:
+                suggested_path = self._cwd / path
+                if suggested_path.exists():
+                    suggestion_message += f' Maybe you meant {suggested_path}?'
+
             raise EditorToolParameterInvalidError(
                 'path',
                 path,
-                f'The path should be an absolute path, starting with `/`. Maybe you meant {suggested_path}?',
+                suggestion_message,
             )
+
         # Check if path and command are compatible
         if command == 'create' and path.exists():
             raise EditorToolParameterInvalidError(
