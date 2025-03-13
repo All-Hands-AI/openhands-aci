@@ -398,7 +398,7 @@ class OHEditor:
         """
         # Check if its an absolute path
         if not path.is_absolute():
-            suggested_path = Path.cwd() / path
+            suggested_path = os.path.join('/workspace', path)
             raise EditorToolParameterInvalidError(
                 'path',
                 path,
