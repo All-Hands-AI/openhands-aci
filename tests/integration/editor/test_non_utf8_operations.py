@@ -268,6 +268,33 @@ def test_complex_workflow_non_utf8_file(temp_non_utf8_file):
         pytest.fail('File was not maintained with the correct encoding')
 
 
+def test_binary_file_handling():
+    """Test handling of binary files that can't be decoded."""
+    # Create a temporary binary file
+    fd, path = tempfile.mkstemp()
+    os.close(fd)
+
+    try:
+        # Write some binary data that can't be decoded as text
+        with open(path, 'wb') as f:
+            f.write(bytes([0x8F, 0x8F, 0x8F, 0x8F]))  # Invalid bytes for most encodings
+
+        # Try to view the file
+        result = file_editor(
+            command='view',
+            path=path,
+        )
+        result_json = parse_result(result)
+        assert 'file appears to be binary' in result_json['formatted_output_and_error'].lower()
+
+    finally:
+        # Clean up
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+
 def test_mixed_encoding_workflow():
     """Test workflow with files of different encodings."""
     # Create two temporary files with different encodings

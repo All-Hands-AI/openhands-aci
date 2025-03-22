@@ -145,9 +145,20 @@ class OHEditor:
 
         Returns:
             The number of lines in the file
+
+        Raises:
+            ToolError: If the file cannot be decoded as text
         """
-        with open(path, encoding=encoding) as f:
-            return sum(1 for _ in f)
+        try:
+            with open(path, encoding=encoding) as f:
+                return sum(1 for _ in f)
+        except UnicodeDecodeError:
+            # If we can't decode the file, it might be binary
+            if is_binary(str(path)):
+                raise ToolError(f"Cannot count lines in binary file: {path}")
+            # If it's not binary but we still can't decode it, try counting lines in binary mode
+            with open(path, 'rb') as f:
+                return sum(1 for _ in f.readlines())
 
     @with_encoding
     def str_replace(
