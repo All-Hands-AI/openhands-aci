@@ -285,7 +285,10 @@ def test_binary_file_handling():
             path=path,
         )
         result_json = parse_result(result)
-        assert 'file appears to be binary' in result_json['formatted_output_and_error'].lower()
+        assert (
+            'file appears to be binary'
+            in result_json['formatted_output_and_error'].lower()
+        )
 
     finally:
         # Clean up

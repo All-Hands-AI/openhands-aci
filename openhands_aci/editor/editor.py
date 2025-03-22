@@ -155,7 +155,7 @@ class OHEditor:
         except UnicodeDecodeError:
             # If we can't decode the file, it might be binary
             if is_binary(str(path)):
-                raise ToolError(f"Cannot count lines in binary file: {path}")
+                raise ToolError(f'Cannot count lines in binary file: {path}')
             # If it's not binary but we still can't decode it, try counting lines in binary mode
             with open(path, 'rb') as f:
                 return sum(1 for _ in f.readlines())
