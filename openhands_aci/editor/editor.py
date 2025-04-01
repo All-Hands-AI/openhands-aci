@@ -579,8 +579,8 @@ class OHEditor:
             end_line: Optional end line number (1-based). Must be provided with start_line.
             encoding: The encoding to use when reading the file (auto-detected by decorator)
         """
-        self.validate_file(path)
         try:
+            self.validate_file(path)
             if start_line is not None and end_line is not None:
                 # Read only the specified line range
                 lines = []
@@ -599,6 +599,8 @@ class OHEditor:
                 # Use line-by-line reading to avoid loading entire file into memory
                 with open(path, 'r', encoding=encoding) as f:
                     return ''.join(f)
+        except ToolError:
+            raise
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to read {path}') from None
 
