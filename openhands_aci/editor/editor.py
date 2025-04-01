@@ -542,11 +542,6 @@ class OHEditor:
         Raises:
             FileValidationError: If the file fails validation
         """
-
-        print('___-------------------------')
-        print(path)
-        print('------------------------------')
-
         # Skip validation for directories or non-existent files (for create command)
         if not path.exists() or not path.is_file():
             return

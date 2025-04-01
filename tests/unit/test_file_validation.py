@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from binaryornot.check import is_binary
 
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import FileValidationError
@@ -33,7 +34,7 @@ def test_validate_binary_file(tmp_path):
 
     with pytest.raises(FileValidationError) as exc_info:
         editor.validate_file(binary_file)
-    assert 'binary' in str(exc_info.value).lower()
+    assert 'file appears to be binary' in str(exc_info.value).lower()
 
 
 def test_validate_text_file(tmp_path):
@@ -72,8 +73,11 @@ def test_validate_pdf_file():
     current_dir = Path(__file__).parent
     pdf_file = current_dir / 'data' / 'caltrain_schedule.pdf'
 
+    # the is_binary function is not accurate for PDF files
+    assert not is_binary(str(pdf_file))
+
     # PDF should be detected as binary
     with pytest.raises(FileValidationError) as exc_info:
         editor.validate_file(pdf_file)
 
-    assert 'binary' in str(exc_info.value).lower()
+    assert 'file appears to be binary' in str(exc_info.value).lower()
