@@ -62,3 +62,18 @@ def test_validate_nonexistent_file():
     nonexistent = Path('/nonexistent/file.txt')
     # Should not raise FileValidationError since validate_path will handle this case
     editor.validate_file(nonexistent)
+
+
+def test_validate_pdf_file():
+    """Test that PDF files are detected as binary."""
+    editor = OHEditor()
+
+    # Get the current directory and construct path to the PDF file
+    current_dir = Path(__file__).parent
+    pdf_file = current_dir / 'data' / 'caltrain_schedule.pdf'
+
+    # PDF should be detected as binary
+    with pytest.raises(FileValidationError) as exc_info:
+        editor.validate_file(pdf_file)
+
+    assert 'binary' in str(exc_info.value).lower()
