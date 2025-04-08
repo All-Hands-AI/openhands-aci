@@ -3,7 +3,7 @@ import re
 
 from openhands_aci import file_editor
 
-filepath = '/home/adityabs/openhands-aci/test.html'
+filepath = '/home/ubuntu/adityabs/openhands-aci/file.go'
 op = file_editor(command='view', path=filepath)
 matches = re.findall(
     r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>', op, re.DOTALL

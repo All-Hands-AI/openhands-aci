@@ -147,13 +147,22 @@ class PlainTextConverter(DocumentConverter):
         content_type, _ = mimetypes.guess_type(
             '__placeholder' + kwargs.get('file_extension', '')
         )
-
+        file_name = os.path.basename(local_path)
         # Only accept text files
         if content_type is None:
-            return None
-        # elif "text/" not in content_type.lower():
-        #     return None
-
+            valid_extensions = [".go", ".php", ".swift", ".toml", ".ini", ".conf", ".env"]
+            extension = kwargs.get('file_extension', '')
+            if extension in valid_extensions or file_name.lower() == "makefile" or file_name.lower() == "dockerfile":
+                text_content = ""
+                with open(local_path, 'rt', encoding='utf-8') as fh:
+                    text_content = fh.read()
+                return DocumentConverterResult(
+                    title=None,
+                    text_content=text_content,
+                )
+            else:
+                return None
+        # Otherwise use the original MIME type detection logic
         text_content = ''
         with open(local_path, 'rt', encoding='utf-8') as fh:
             text_content = fh.read()

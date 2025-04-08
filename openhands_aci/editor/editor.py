@@ -254,12 +254,15 @@ class OHEditor:
         start_line = 1
         # TODO: ignore view range option as of now
         if True:
-            file_content = self.read_file_markdown(path)
-            return CLIResult(
-                output=self._make_output(file_content, str(path), start_line),
-                path=str(path),
-                prev_exist=True,
-            )
+            try:
+                file_content = self.read_file_markdown(path)
+                return CLIResult(
+                    output=self._make_output(file_content, str(path), start_line),
+                    path=str(path),
+                    prev_exist=True,
+                )
+            except:
+                raise ToolError(f"This tool does not support viewing the given file. Please use Python code to read {path}")
 
         # if len(view_range) != 2 or not all(isinstance(i, int) for i in view_range):
         #     raise EditorToolParameterInvalidError(
