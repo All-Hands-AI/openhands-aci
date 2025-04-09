@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from .diff_editor import OHDiffEditor
 from .editor import Command, OHEditor
 from .encoding import EncodingManager, with_encoding
 from .exceptions import ToolError
@@ -12,6 +13,7 @@ _GLOBAL_EDITOR = OHEditor()
 __all__ = [
     'Command',
     'OHEditor',
+    'OHDiffEditor',
     'ToolError',
     'ToolResult',
     'FileCache',
