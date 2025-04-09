@@ -1,3 +1,5 @@
+exclude: ^openhands_aci/indexing/locagent/
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -38,6 +40,6 @@ repos:
       - id: mypy
         additional_dependencies:
           [types-requests, types-setuptools, types-pyyaml, types-toml, types-cachetools]
-        entry: mypy --config-file dev_config/python/mypy.ini openhands_aci/
+        entry: mypy --config-file dev_config/python/mypy.ini openhands_aci/ --exclude 'openhands_aci/indexing/locagent/'
         always_run: true
         pass_filenames: false
