@@ -100,6 +100,7 @@ def test_str_replace_no_linting(editor):
      2\tThis file is for testing purposes.
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
+    print(result.output)
 
     # Test that the file content has been updated
     assert 'This is a sample file.' in test_file.read_text()
@@ -605,3 +606,49 @@ def test_validate_path_suggests_absolute_path(editor, tmp_path):
     suggested_path = error_message.split('Maybe you meant ')[1].strip('?')
     assert Path(suggested_path).is_absolute()
     assert str(test_file.parent) in suggested_path
+
+
+def test_str_replace_and_insert_snippet_output_on_a_large_file(editor):
+    editor, test_file = editor
+
+    # Replace the current content with content: Line {line_number}
+    _ = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='This is a test file.\nThis file is for testing purposes.',
+        new_str='',
+    )
+    for i in range(0, 700):
+        _ = editor(
+            command='insert', path=str(test_file), insert_line=i, new_str=f'Line {i+1}'
+        )
+
+    # View file
+    result = editor(command='view', path=str(test_file))
+    assert '     1\tLine 1' in result.output
+    assert '   500\tLine 500' in result.output
+
+    # Replace line 500's content with '500 new'
+    result = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='Line 500',
+        new_str='500 new',
+    )
+    assert '   500\t500 new' in result.output
+
+    # Delete the line '500 new'
+    result = editor(
+        command='str_replace', path=str(test_file), old_str='500 new\n', new_str=''
+    )
+    assert '   499\tLine 499' in result.output
+    assert '   500\tLine 501' in result.output
+
+    # Insert content at line 500
+    result = editor(
+        command='insert',
+        path=str(test_file),
+        insert_line=499,
+        new_str='Inserted line at 500',
+    )
+    assert '   500\tInserted line at 500' in result.output

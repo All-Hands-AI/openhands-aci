@@ -216,7 +216,7 @@ class OHEditor:
         end_line = replacement_line + SNIPPET_CONTEXT_WINDOW + new_str.count('\n')
 
         # Read just the snippet range
-        snippet = self.read_file(path, start_line=start_line, end_line=end_line)
+        snippet = self.read_file(path, start_line=start_line + 1, end_line=end_line)
 
         # Prepare the success message
         success_message = f'The file {path} has been edited. '
@@ -428,12 +428,12 @@ class OHEditor:
         shutil.move(temp_file.name, path)
 
         # Read just the snippet range
-        start_line = max(1, insert_line - SNIPPET_CONTEXT_WINDOW)
+        start_line = max(0, insert_line - SNIPPET_CONTEXT_WINDOW)
         end_line = min(
             num_lines + len(new_str_lines),
             insert_line + SNIPPET_CONTEXT_WINDOW + len(new_str_lines),
         )
-        snippet = self.read_file(path, start_line=start_line, end_line=end_line)
+        snippet = self.read_file(path, start_line=start_line + 1, end_line=end_line + 1)
 
         # Save history - we already have the lines in memory
         file_text = ''.join(history_lines)
