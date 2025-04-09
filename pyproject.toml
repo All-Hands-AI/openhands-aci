@@ -11,11 +11,6 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-numpy = "*"
-pandas = "*"
-scipy = "*"
-networkx = "*"
-litellm = "*"
 gitpython = "*"
 tree-sitter = "^0.24.0"
 tree-sitter-python = "^0.23.6"
