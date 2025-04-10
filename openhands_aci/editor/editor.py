@@ -28,8 +28,6 @@ Command = Literal[
     'str_replace',
     'insert',
     'undo_edit',
-    # 'jump_to_definition', TODO:
-    # 'find_references' TODO:
 ]
 
 
@@ -57,9 +55,6 @@ class OHEditor:
 
         Args:
             max_file_size_mb: Maximum file size in MB. If None, uses the default MAX_FILE_SIZE_MB.
-            workspace_root: Root directory that serves as the current working directory for relative path
-                           suggestions. Must be an absolute path. If None, no path suggestions will be
-                           provided for relative paths.
             workspace_root: Root directory that serves as the current working directory for relative path
                            suggestions. Must be an absolute path. If None, no path suggestions will be
                            provided for relative paths.
@@ -433,7 +428,7 @@ class OHEditor:
             num_lines + len(new_str_lines),
             insert_line + SNIPPET_CONTEXT_WINDOW + len(new_str_lines),
         )
-        snippet = self.read_file(path, start_line=start_line + 1, end_line=end_line + 1)
+        snippet = self.read_file(path, start_line=start_line + 1, end_line=end_line)
 
         # Save history - we already have the lines in memory
         file_text = ''.join(history_lines)
@@ -466,10 +461,6 @@ class OHEditor:
     def validate_path(self, command: Command, path: Path) -> None:
         """
         Check that the path/command combination is valid.
-
-        Validates:
-        1. Path is absolute
-        2. Path and command are compatible
 
         Validates:
         1. Path is absolute
@@ -627,7 +618,7 @@ class OHEditor:
         snippet_content = '\n'.join(
             [
                 f'{i + start_line:6}\t{line}'
-                for i, line in enumerate(snippet_content.split('\n'))
+                for i, line in enumerate(snippet_content.splitlines())
             ]
         )
         return (
