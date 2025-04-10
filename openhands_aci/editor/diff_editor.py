@@ -1,16 +1,13 @@
-import os
-import re
-import shutil
-import tempfile
 from difflib import SequenceMatcher
 from pathlib import Path
 
-from .editor import OHEditor # Import the base class
+from .editor import OHEditor  # Import the base class
 from .exceptions import ToolError
 from .results import CLIResult
 
 # Fenced diff helper methods adapted from Aider / OpenHands runtime/utils/edit.py
 # Original licensed under Apache 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
 
 class OHDiffEditor(OHEditor):
     """
@@ -201,7 +198,7 @@ class OHDiffEditor(OHEditor):
         """
         Implement Fenced Diff (SEARCH/REPLACE) edit logic.
         """
-        self.validate_path('view', path) # Use 'view' context for basic path validation
+        self.validate_path('view', path)  # Use 'view' context for basic path validation
         if not path.exists():
             if not search.strip():
                 # Create file if search is empty
@@ -216,19 +213,21 @@ class OHDiffEditor(OHEditor):
             else:
                 raise ToolError(f'File not found: {path}')
         if path.is_dir():
-             raise ToolError(f'Path is a directory, cannot perform fenced replace: {path}')
+            raise ToolError(
+                f'Path is a directory, cannot perform fenced replace: {path}'
+            )
 
-        self.validate_file(path) # Check size, binary etc.
+        self.validate_file(path)  # Check size, binary etc.
 
-        original_content = self.read_file(path) # Reads with encoding detection
+        original_content = self.read_file(path)  # Reads with encoding detection
 
         # Handle Empty Search Block (Append)
         if not search.strip():
             append_content = replace
             if original_content and not original_content.endswith('\n'):
-                 original_content_with_newline = original_content + '\n'
+                original_content_with_newline = original_content + '\n'
             else:
-                 original_content_with_newline = original_content
+                original_content_with_newline = original_content
 
             new_content_str = original_content_with_newline + append_content
             # Save history *before* writing
@@ -247,16 +246,27 @@ class OHDiffEditor(OHEditor):
         search_lines = search.splitlines(keepends=True)
         replace_lines = replace.splitlines(keepends=True)
 
-        if search and not search_lines: search_lines = ['\n'] * search.count('\n') + ([''] if not search.endswith('\n') else [])
-        if replace and not replace_lines: replace_lines = ['\n'] * replace.count('\n') + ([''] if not replace.endswith('\n') else [])
-        if not replace: replace_lines = []
+        if search and not search_lines:
+            search_lines = ['\n'] * search.count('\n') + (
+                [''] if not search.endswith('\n') else []
+            )
+        if replace and not replace_lines:
+            replace_lines = ['\n'] * replace.count('\n') + (
+                [''] if not replace.endswith('\n') else []
+            )
+        if not replace:
+            replace_lines = []
 
         # Attempt 1: Exact match
-        new_content_str = self._fenced_exact_replace(original_lines, search_lines, replace_lines)
+        new_content_str = self._fenced_exact_replace(
+            original_lines, search_lines, replace_lines
+        )
 
         # Attempt 2: Whitespace flexible match
         if new_content_str is None:
-            new_content_str = self._fenced_whitespace_flexible_replace(original_lines, search_lines, replace_lines)
+            new_content_str = self._fenced_whitespace_flexible_replace(
+                original_lines, search_lines, replace_lines
+            )
 
         # Handle errors (search not found)
         if new_content_str is None:
@@ -265,7 +275,9 @@ class OHDiffEditor(OHEditor):
                 f'or with flexible whitespace in {path}.\n'
                 'SEARCH block:\n```\n' + search + '\n```\n'
             )
-            similar_block = self._fenced_find_most_similar_block(original_content, search)
+            similar_block = self._fenced_find_most_similar_block(
+                original_content, search
+            )
             if similar_block:
                 error_message += (
                     'Did you mean to match something like this block from the file?\n'
