@@ -335,7 +335,9 @@ class OHEditor:
         file_content = self.read_file(path, start_line=start_line, end_line=end_line)
 
         # Get the detected encoding
-        output = self._make_output(file_content, str(path), start_line)
+        output = self._make_output(
+            '\n'.join(file_content.splitlines()), str(path), start_line
+        )  # Remove extra newlines
 
         return CLIResult(
             path=str(path),
@@ -618,7 +620,7 @@ class OHEditor:
         snippet_content = '\n'.join(
             [
                 f'{i + start_line:6}\t{line}'
-                for i, line in enumerate(snippet_content.splitlines())
+                for i, line in enumerate(snippet_content.split('\n'))
             ]
         )
         return (

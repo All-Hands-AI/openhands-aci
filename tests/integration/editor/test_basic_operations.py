@@ -102,6 +102,7 @@ match = re.search(
      5\t    re.DOTALL,
      6\t)
      7\t...More text here.
+     8\t
 """
     )
 

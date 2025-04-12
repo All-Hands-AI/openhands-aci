@@ -40,6 +40,7 @@ def test_view_file(editor):
     assert f"Here's the result of running `cat -n` on {test_file}:" in result.output
     assert '1\tThis is a test file.' in result.output
     assert '2\tThis file is for testing purposes.' in result.output
+    assert '3\t' not in result.output  # No extra line
 
 
 def test_view_directory(editor):
@@ -52,6 +53,30 @@ def test_view_directory(editor):
 {parent_dir}/
 {parent_dir}/test.txt"""
     )
+
+
+def test_view_with_a_specific_range(editor):
+    editor, test_file = editor
+
+    # Replace the current content with content: Line {line_number}
+    _ = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='This is a test file.\nThis file is for testing purposes.',
+        new_str='',
+    )
+    for i in range(0, 200):
+        _ = editor(
+            command='insert', path=str(test_file), insert_line=i, new_str=f'Line {i+1}'
+        )
+
+    # View file in range 50-100
+    result = editor(command='view', path=str(test_file), view_range=[50, 100])
+    assert f"Here's the result of running `cat -n` on {test_file}:" in result.output
+    assert '    49\tLine 49' not in result.output
+    assert '    50\tLine 50' in result.output
+    assert '   100\tLine 100' in result.output
+    assert '   101' not in result.output
 
 
 def test_create_file(editor):
@@ -72,6 +97,11 @@ def test_create_with_empty_string(editor):
     assert new_file.exists()
     assert new_file.read_text() == ''
     assert 'File created successfully' in result.output
+
+    # Test the view command showing an empty line
+    result = editor(command='view', path=str(new_file))
+    assert f"Here's the result of running `cat -n` on {new_file}:" in result.output
+    assert '1\t' in result.output  # Check for empty line
 
 
 def test_create_with_none_file_text(editor):
@@ -100,7 +130,6 @@ def test_str_replace_no_linting(editor):
      2\tThis file is for testing purposes.
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
-    print(result.output)
 
     # Test that the file content has been updated
     assert 'This is a sample file.' in test_file.read_text()
@@ -265,7 +294,6 @@ def test_insert_no_linting(editor):
     )
     assert isinstance(result, CLIResult)
     assert 'Inserted line' in test_file.read_text()
-    print(result.output)
     assert (
         result.output
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
@@ -287,7 +315,6 @@ def test_insert_with_linting(editor):
     )
     assert isinstance(result, CLIResult)
     assert 'Inserted line' in test_file.read_text()
-    print(result.output)
     assert (
         result.output
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
