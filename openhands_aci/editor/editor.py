@@ -164,11 +164,10 @@ class OHEditor:
             encoding: The encoding to use (auto-detected by decorator)
         """
         self.validate_file(path)
-        old_str = old_str.expandtabs()
-        new_str = new_str.expandtabs() if new_str is not None else ''
+        new_str = new_str or ''
 
         # Read the entire file first to handle both single-line and multi-line replacements
-        file_content = self.read_file(path).expandtabs()
+        file_content = self.read_file(path)
 
         # Find all occurrences using regex
         # Escape special regex characters in old_str to match it literally
@@ -393,7 +392,6 @@ class OHEditor:
                 f'It should be within the range of lines of the file: {[0, num_lines]}',
             )
 
-        new_str = new_str.expandtabs()
         new_str_lines = new_str.split('\n')
 
         # Create temporary file for the new content
@@ -406,7 +404,7 @@ class OHEditor:
                 for i, line in enumerate(f, 1):
                     if i > insert_line:
                         break
-                    temp_file.write(line.expandtabs())
+                    temp_file.write(line)
                     history_lines.append(line)
 
             # Insert new content
@@ -418,7 +416,7 @@ class OHEditor:
                 for i, line in enumerate(f, 1):
                     if i <= insert_line:
                         continue
-                    temp_file.write(line.expandtabs())
+                    temp_file.write(line)
                     history_lines.append(line)
 
         # Move temporary file to original location
@@ -510,7 +508,7 @@ class OHEditor:
         """
         Implement the undo_edit command.
         """
-        current_text = self.read_file(path).expandtabs()
+        current_text = self.read_file(path)
         old_text = self._history_manager.pop_last_history(path)
         if old_text is None:
             raise ToolError(f'No edit history found for {path}.')
@@ -606,7 +604,6 @@ class OHEditor:
         snippet_content: str,
         snippet_description: str,
         start_line: int = 1,
-        expand_tabs: bool = True,
     ) -> str:
         """
         Generate output for the CLI based on the content of a code snippet.
@@ -614,8 +611,6 @@ class OHEditor:
         snippet_content = maybe_truncate(
             snippet_content, truncate_notice=FILE_CONTENT_TRUNCATED_NOTICE
         )
-        if expand_tabs:
-            snippet_content = snippet_content.expandtabs()
 
         snippet_content = '\n'.join(
             [

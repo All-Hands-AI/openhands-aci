@@ -169,7 +169,7 @@ def test_str_replace_multi_line_with_tabs_no_linting(editor_python_file_with_tab
         result.output
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tdef test():
-     2\t{'\t'.expandtabs()}print("Hello, Universe!")
+     2\t\tprint("Hello, Universe!")
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
