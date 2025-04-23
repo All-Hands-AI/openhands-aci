@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-aci"
-version = "0.2.10"
+version = "0.2.11"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 authors = ["OpenHands"]
 license = "MIT"
