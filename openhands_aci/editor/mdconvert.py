@@ -150,9 +150,10 @@ class PlainTextConverter(DocumentConverter):
         file_name = os.path.basename(local_path)
         # Only accept text files
         if content_type is None:
-            valid_extensions = [".go", ".php", ".swift", ".toml", ".ini", ".conf", ".env"]
+            valid_extensions = [".go", ".jsx", ".scss", ".vert", ".frag", ".tsx", ".php", ".swift", ".toml", ".ini", ".conf", ".env", ".py", ".js", ".ts",".css", ".less", ".json", ".xml", ".yaml", ".yml", ".c", ".cpp", ".h", ".hpp", ".cs", ".java", ".kt", ".go", ".rb", ".php", ".pl", ".rs", ".swift", ".sh", ".bat", ".ps1", ".sql", ".r", ".m", ".elm", ".ex", ".exs", ".erl", ".dart", ".lua", ".tcl", ".groovy", ".scala", ".clj", ".fs", ".pas", ".asm", ".vb", ".razor", ".jsp", ".asp", ".aspx", ".erb", ".haml", ".slim", ".pug", ".jade", ".vue", ".svelte", ".coffee", ".glsl", ".comp", ".geom", ".tesc", ".tese", ".hlsl", ".metal", ".shader", ".cg", ".md", ".markdown", ".txt", ".conf", ".ini", ".cfg", ".properties", ".toml", ".tex", ".rst", ".adoc", ".wiki", ".env", ".editorconfig", ".gitignore", ".gitattributes", ".csv", ".tsv", ".log", ".diff", ".patch", ".gitconfig", ".npmrc", ".yarnrc", ".eslintrc", ".prettierrc", ".lock"]
+            special_files = ["makefile", "dockerfile", "license", "readme", "authors", "contributors", "changelog", "gemfile", "rakefile", "procfile"]
             extension = kwargs.get('file_extension', '')
-            if extension in valid_extensions or file_name.lower() == "makefile" or file_name.lower() == "dockerfile":
+            if extension in valid_extensions or file_name.lower() in special_files:
                 text_content = ""
                 with open(local_path, 'rt', encoding='utf-8') as fh:
                     text_content = fh.read()
