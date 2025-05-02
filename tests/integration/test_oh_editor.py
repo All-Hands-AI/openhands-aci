@@ -356,6 +356,26 @@ def test_insert_with_empty_string(editor):
     assert len(content) == 3  # Original 2 lines plus empty line
 
 
+def test_insert_chinese_text_into_english_file(editor):
+    editor, test_file = editor
+    result = editor(
+        command='insert',
+        path=str(test_file),
+        insert_line=0,
+        new_str='中文文本',
+    )
+    assert isinstance(result, CLIResult)
+    assert '中文文本' in test_file.read_text()
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
+     1\t中文文本
+     2\tThis is a test file.
+     3\tThis file is for testing purposes.
+Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+    )
+
+
 def test_insert_with_none_new_str(editor):
     editor, test_file = editor
     with pytest.raises(EditorToolParameterMissingError) as exc_info:
