@@ -389,7 +389,7 @@ class OHEditor:
             raise EditorToolParameterInvalidError(
                 'insert_line',
                 insert_line,
-                f'It should be within the range of lines of the file: {[0, num_lines]}',
+                f'It should be within the range of allowed values: {[0, num_lines]}',
             )
 
         new_str_lines = new_str.split('\n')
