@@ -337,7 +337,7 @@ def test_insert_invalid_line(editor):
             new_str='Invalid Insert',
         )
     assert 'Invalid `insert_line` parameter' in str(exc_info.value.message)
-    assert 'It should be within the range of lines of the file' in str(
+    assert 'It should be within the range of allowed values:' in str(
         exc_info.value.message
     )
 
