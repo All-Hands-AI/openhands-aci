@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-aci"
-version = "0.2.8"
+version = "0.2.13"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 authors = ["OpenHands"]
 license = "MIT"
@@ -11,12 +11,6 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-numpy = "*"
-pandas = "*"
-matplotlib = "^3.10.1"
-scipy = "*"
-networkx = "*"
-litellm = "*"
 gitpython = "*"
 tree-sitter = "^0.24.0"
 tree-sitter-python = "^0.23.6"
@@ -29,6 +23,7 @@ whatthepatch = "^1.0.6"
 binaryornot = "^0.4.4"
 cachetools = "^5.5.2"
 charset-normalizer = "^3.4.1"
+pydantic = "^2.11.3"
 libcst = "1.5.0"
 llama-index = "^0.12.29"
 llama-index-core = "^0.12.29"

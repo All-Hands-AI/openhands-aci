@@ -48,6 +48,10 @@ class EncodingManager:
         # Get the best match if any exists
         if results and results['confidence'] > self.confidence_threshold:
             encoding = results['encoding']
+            # Always use utf-8 instead of ascii for text files to support non-ASCII characters
+            # This ensures files initially containing only ASCII can later accept non-ASCII content
+            if encoding.lower() == 'ascii':
+                encoding = self.default_encoding
         else:
             encoding = self.default_encoding
 
