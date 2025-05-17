@@ -33,7 +33,7 @@ def create_test_file(path: Path, size_mb: float = 5.0):
     print(f'\nCreating test file with {num_lines} lines...')
     with open(path, 'w') as f:
         for i in range(num_lines):
-            f.write(f'Line {i}: ' + 'x' * (line_size - 10) + '\n')
+            f.write(f'Line {i}: ' + 'x' * (line_size - 30) + '\n')
 
     actual_size = os.path.getsize(path)
     print(f'File created, size: {actual_size / 1024 / 1024:.2f} MB')
