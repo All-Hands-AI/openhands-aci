@@ -99,9 +99,13 @@ def parse_repo_index():
         ALL_CLASS = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_CLASS)
         ALL_FUNC = DP_GRAPH_ENTITY_SEARCHER.get_all_nodes_by_type(NODE_TYPE_FUNCTION)
 
-        # logging.debug(f'Set CURRENT_ISSUE_ID = {CURRENT_ISSUE_ID}')
-        # logger.debug(f'Process repo {REPO_PATH} successfully.')
-        print(f'Process repo {REPO_PATH} successfully.')
+    if not os.path.exists(os.path.join(BM25_INDEX_DIR, 'corpus.jsonl')):
+        absolute_repo_dir = os.path.abspath(REPO_PATH)
+        build_code_retriever(
+            absolute_repo_dir,
+            persist_path=BM25_INDEX_DIR,
+            similarity_top_k=10,
+        )
 
 
 def get_current_repo_modules():
@@ -807,9 +811,6 @@ def bm25_content_retrieve(
         # TODO: if similairy_top_k > cache's setting, then regenerate
         retriever = load_retriever(BM25_INDEX_DIR)
     else:
-        # repo_path = get_repo_save_dir()
-        # repo_dir = setup_repo(instance_data=instance, repo_base_dir=repo_playground,
-        # dataset=None, split=None)
         absolute_repo_dir = os.path.abspath(REPO_PATH)
         retriever = build_code_retriever(
             absolute_repo_dir,

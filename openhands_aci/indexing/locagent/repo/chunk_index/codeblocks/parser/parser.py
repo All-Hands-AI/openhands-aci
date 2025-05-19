@@ -8,7 +8,7 @@ from typing import Callable, List, Optional, Tuple
 import networkx as nx
 from llama_index.core import get_tokenizer
 from tree_sitter import Language, Node, Parser
-
+# from tree_sitter_language_pack import get_parser
 from ..codeblocks import (
     BlockSpan,
     CodeBlock,
@@ -83,11 +83,10 @@ class CodeParser:
         debug: bool = False,
     ):
         try:
-            self.tree_parser = Parser()
-            self.tree_parser.set_language(language)
+            self.tree_parser = Parser(language)
             self.tree_language = language
         except Exception as e:
-            # logger.warning(f'Could not get parser for language {language}.')
+            logging.warning(f'Could not get parser for language {language}.')
             raise e
         self.apply_gpt_tweaks = apply_gpt_tweaks
         self.index_callback = index_callback
@@ -123,7 +122,7 @@ class CodeParser:
 
     def _build_queries(self, query_file: str):
         with resources.open_text(
-            'repo_index.codeblocks.parser.queries', query_file
+            'codeblocks.parser.queries', query_file
         ) as file:
             query_list = file.read().strip().split('\n\n')
             parsed_queries = []
@@ -460,7 +459,8 @@ class CodeParser:
 
         root_node = None
 
-        for found_node, tag in captures:
+        for tag, found_node in captures.items():
+            found_node = found_node[0]
             self.debug_log(f'[{label}] Found tag {tag} on node {found_node}')
 
             if tag == 'root' and not root_node and node == found_node:

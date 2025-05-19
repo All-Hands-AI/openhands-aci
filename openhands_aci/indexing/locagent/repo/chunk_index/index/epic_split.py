@@ -511,7 +511,7 @@ class EpicSplitter(NodeParser):
             metadata=metadata,
             excluded_embed_metadata_keys=excluded_embed_metadata_keys,
             excluded_llm_metadata_keys=node.excluded_llm_metadata_keys,
-            metadata_seperator=node.metadata_seperator,
+            metadata_seperator=node.metadata_separator,
             metadata_template=node.metadata_template,
             text_template=node.text_template,
             # relationships={NodeRelationship.SOURCE: node.as_related_node_info()},
