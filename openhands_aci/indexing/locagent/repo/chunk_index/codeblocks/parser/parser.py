@@ -122,7 +122,7 @@ class CodeParser:
 
     def _build_queries(self, query_file: str):
         with resources.open_text(
-            'codeblocks.parser.queries', query_file
+            'openhands_aci.indexing.locagent.repo.chunk_index.codeblocks.parser.queries', query_file
         ) as file:
             query_list = file.read().strip().split('\n\n')
             parsed_queries = []
