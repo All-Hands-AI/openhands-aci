@@ -37,4 +37,4 @@ jobs:
           POETRY_VIRTUALENVS_CREATE: false
       - name: Run tests
         run: |
-          poetry run pytest ./tests/integration
+          poetry run pytest ./tests/integration --forked

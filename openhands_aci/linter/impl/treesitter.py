@@ -2,9 +2,9 @@ import warnings
 
 from grep_ast import TreeContext, filename_to_lang
 from grep_ast.parsers import PARSERS
+from tree_sitter_language_pack import get_parser
 
 from ..base import BaseLinter, LintResult
-from .treesitter_compat import get_parser
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter('ignore', category=FutureWarning)
