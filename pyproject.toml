@@ -26,6 +26,8 @@ llama-index = "^0.12.29"
 llama-index-core = "^0.12.29"
 llama-index-retrievers-bm25 = "^0.5.2"
 rapidfuzz = "^3.13.0"
+matplotlib = "^3.10.3"
+networkx = "^3.4.2"
 
 
 [tool.poetry.group.dev.dependencies]
