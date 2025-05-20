@@ -14,7 +14,6 @@ python = "^3.12"
 gitpython = "*"
 tree-sitter = "^0.24.0"
 tree-sitter-language-pack = "0.7.3"
-tree-sitter-languages = "1.10.2"
 grep-ast = "0.3.3"
 flake8 = "*"
 whatthepatch = "^1.0.6"
@@ -37,6 +36,7 @@ pre-commit = "^4.0.1"
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.3"
 psutil = "^5.9.8"
+pytest-forked = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
