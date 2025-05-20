@@ -40,6 +40,7 @@ def test_view_file(editor):
     assert f"Here's the result of running `cat -n` on {test_file}:" in result.output
     assert '1\tThis is a test file.' in result.output
     assert '2\tThis file is for testing purposes.' in result.output
+    assert '3\t' not in result.output  # No extra line
 
 
 def test_view_directory(editor):
@@ -52,6 +53,30 @@ def test_view_directory(editor):
 {parent_dir}/
 {parent_dir}/test.txt"""
     )
+
+
+def test_view_with_a_specific_range(editor):
+    editor, test_file = editor
+
+    # Replace the current content with content: Line {line_number}
+    _ = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='This is a test file.\nThis file is for testing purposes.',
+        new_str='',
+    )
+    for i in range(0, 200):
+        _ = editor(
+            command='insert', path=str(test_file), insert_line=i, new_str=f'Line {i+1}'
+        )
+
+    # View file in range 50-100
+    result = editor(command='view', path=str(test_file), view_range=[50, 100])
+    assert f"Here's the result of running `cat -n` on {test_file}:" in result.output
+    assert '    49\tLine 49' not in result.output
+    assert '    50\tLine 50' in result.output
+    assert '   100\tLine 100' in result.output
+    assert '101' not in result.output
 
 
 def test_create_file(editor):
@@ -72,6 +97,11 @@ def test_create_with_empty_string(editor):
     assert new_file.exists()
     assert new_file.read_text() == ''
     assert 'File created successfully' in result.output
+
+    # Test the view command showing an empty line
+    result = editor(command='view', path=str(new_file))
+    assert f"Here's the result of running `cat -n` on {new_file}:" in result.output
+    assert '1\t' in result.output  # Check for empty line
 
 
 def test_create_with_none_file_text(editor):
@@ -139,7 +169,7 @@ def test_str_replace_multi_line_with_tabs_no_linting(editor_python_file_with_tab
         result.output
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of {test_file}:
      1\tdef test():
-     2\t{'\t'.expandtabs()}print("Hello, Universe!")
+     2\t\tprint("Hello, Universe!")
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
@@ -264,7 +294,6 @@ def test_insert_no_linting(editor):
     )
     assert isinstance(result, CLIResult)
     assert 'Inserted line' in test_file.read_text()
-    print(result.output)
     assert (
         result.output
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
@@ -286,7 +315,6 @@ def test_insert_with_linting(editor):
     )
     assert isinstance(result, CLIResult)
     assert 'Inserted line' in test_file.read_text()
-    print(result.output)
     assert (
         result.output
         == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
@@ -309,7 +337,7 @@ def test_insert_invalid_line(editor):
             new_str='Invalid Insert',
         )
     assert 'Invalid `insert_line` parameter' in str(exc_info.value.message)
-    assert 'It should be within the range of lines of the file' in str(
+    assert 'It should be within the range of allowed values:' in str(
         exc_info.value.message
     )
 
@@ -326,6 +354,26 @@ def test_insert_with_empty_string(editor):
     content = test_file.read_text().splitlines()
     assert '' in content
     assert len(content) == 3  # Original 2 lines plus empty line
+
+
+def test_insert_chinese_text_into_english_file(editor):
+    editor, test_file = editor
+    result = editor(
+        command='insert',
+        path=str(test_file),
+        insert_line=0,
+        new_str='中文文本',
+    )
+    assert isinstance(result, CLIResult)
+    assert '中文文本' in test_file.read_text()
+    assert (
+        result.output
+        == f"""The file {test_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
+     1\t中文文本
+     2\tThis is a test file.
+     3\tThis file is for testing purposes.
+Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+    )
 
 
 def test_insert_with_none_new_str(editor):
@@ -605,3 +653,49 @@ def test_validate_path_suggests_absolute_path(editor, tmp_path):
     suggested_path = error_message.split('Maybe you meant ')[1].strip('?')
     assert Path(suggested_path).is_absolute()
     assert str(test_file.parent) in suggested_path
+
+
+def test_str_replace_and_insert_snippet_output_on_a_large_file(editor):
+    editor, test_file = editor
+
+    # Replace the current content with content: Line {line_number}
+    _ = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='This is a test file.\nThis file is for testing purposes.',
+        new_str='',
+    )
+    for i in range(0, 700):
+        _ = editor(
+            command='insert', path=str(test_file), insert_line=i, new_str=f'Line {i+1}'
+        )
+
+    # View file
+    result = editor(command='view', path=str(test_file))
+    assert '     1\tLine 1' in result.output
+    assert '   500\tLine 500' in result.output
+
+    # Replace line 500's content with '500 new'
+    result = editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='Line 500',
+        new_str='500 new',
+    )
+    assert '   500\t500 new' in result.output
+
+    # Delete the line '500 new'
+    result = editor(
+        command='str_replace', path=str(test_file), old_str='500 new\n', new_str=''
+    )
+    assert '   499\tLine 499' in result.output
+    assert '   500\tLine 501' in result.output
+
+    # Insert content at line 500
+    result = editor(
+        command='insert',
+        path=str(test_file),
+        insert_line=499,
+        new_str='Inserted line at 500',
+    )
+    assert '   500\tInserted line at 500' in result.output

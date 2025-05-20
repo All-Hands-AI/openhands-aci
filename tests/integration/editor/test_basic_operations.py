@@ -176,8 +176,8 @@ def test_tab_expansion(temp_file):
     )
     result_json = parse_result(result)
     # Tabs should be expanded to spaces in output
-    assert '    indented' in result_json['formatted_output_and_error']
-    assert 'line    with    tabs' in result_json['formatted_output_and_error']
+    assert '\tindented' in result_json['formatted_output_and_error']
+    assert 'line\twith\ttabs' in result_json['formatted_output_and_error']
 
     # Test str_replace with tabs in old_str
     result = file_editor(
@@ -200,7 +200,7 @@ def test_tab_expansion(temp_file):
     )
     result_json = parse_result(result)
     # Tabs should be expanded in the output
-    assert 'new     line    with    tabs' in result_json['formatted_output_and_error']
+    assert 'new\tline\twith\ttabs' in result_json['formatted_output_and_error']
 
     # Test insert with tabs
     result = file_editor(
@@ -212,4 +212,4 @@ def test_tab_expansion(temp_file):
     )
     result_json = parse_result(result)
     # Tabs should be expanded in the output
-    assert '        indented        line' in result_json['formatted_output_and_error']
+    assert '\tindented\tline' in result_json['formatted_output_and_error']

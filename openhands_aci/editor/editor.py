@@ -28,8 +28,6 @@ Command = Literal[
     'str_replace',
     'insert',
     'undo_edit',
-    # 'jump_to_definition', TODO:
-    # 'find_references' TODO:
 ]
 
 
@@ -57,9 +55,6 @@ class OHEditor:
 
         Args:
             max_file_size_mb: Maximum file size in MB. If None, uses the default MAX_FILE_SIZE_MB.
-            workspace_root: Root directory that serves as the current working directory for relative path
-                           suggestions. Must be an absolute path. If None, no path suggestions will be
-                           provided for relative paths.
             workspace_root: Root directory that serves as the current working directory for relative path
                            suggestions. Must be an absolute path. If None, no path suggestions will be
                            provided for relative paths.
@@ -169,11 +164,10 @@ class OHEditor:
             encoding: The encoding to use (auto-detected by decorator)
         """
         self.validate_file(path)
-        old_str = old_str.expandtabs()
-        new_str = new_str.expandtabs() if new_str is not None else ''
+        new_str = new_str or ''
 
         # Read the entire file first to handle both single-line and multi-line replacements
-        file_content = self.read_file(path).expandtabs()
+        file_content = self.read_file(path)
 
         # Find all occurrences using regex
         # Escape special regex characters in old_str to match it literally
@@ -216,7 +210,7 @@ class OHEditor:
         end_line = replacement_line + SNIPPET_CONTEXT_WINDOW + new_str.count('\n')
 
         # Read just the snippet range
-        snippet = self.read_file(path, start_line=start_line, end_line=end_line)
+        snippet = self.read_file(path, start_line=start_line + 1, end_line=end_line)
 
         # Prepare the success message
         success_message = f'The file {path} has been edited. '
@@ -340,7 +334,9 @@ class OHEditor:
         file_content = self.read_file(path, start_line=start_line, end_line=end_line)
 
         # Get the detected encoding
-        output = self._make_output(file_content, str(path), start_line)
+        output = self._make_output(
+            '\n'.join(file_content.splitlines()), str(path), start_line
+        )  # Remove extra newlines
 
         return CLIResult(
             path=str(path),
@@ -393,10 +389,9 @@ class OHEditor:
             raise EditorToolParameterInvalidError(
                 'insert_line',
                 insert_line,
-                f'It should be within the range of lines of the file: {[0, num_lines]}',
+                f'It should be within the range of allowed values: {[0, num_lines]}',
             )
 
-        new_str = new_str.expandtabs()
         new_str_lines = new_str.split('\n')
 
         # Create temporary file for the new content
@@ -409,7 +404,7 @@ class OHEditor:
                 for i, line in enumerate(f, 1):
                     if i > insert_line:
                         break
-                    temp_file.write(line.expandtabs())
+                    temp_file.write(line)
                     history_lines.append(line)
 
             # Insert new content
@@ -421,19 +416,19 @@ class OHEditor:
                 for i, line in enumerate(f, 1):
                     if i <= insert_line:
                         continue
-                    temp_file.write(line.expandtabs())
+                    temp_file.write(line)
                     history_lines.append(line)
 
         # Move temporary file to original location
         shutil.move(temp_file.name, path)
 
         # Read just the snippet range
-        start_line = max(1, insert_line - SNIPPET_CONTEXT_WINDOW)
+        start_line = max(0, insert_line - SNIPPET_CONTEXT_WINDOW)
         end_line = min(
             num_lines + len(new_str_lines),
             insert_line + SNIPPET_CONTEXT_WINDOW + len(new_str_lines),
         )
-        snippet = self.read_file(path, start_line=start_line, end_line=end_line)
+        snippet = self.read_file(path, start_line=start_line + 1, end_line=end_line)
 
         # Save history - we already have the lines in memory
         file_text = ''.join(history_lines)
@@ -466,10 +461,6 @@ class OHEditor:
     def validate_path(self, command: Command, path: Path) -> None:
         """
         Check that the path/command combination is valid.
-
-        Validates:
-        1. Path is absolute
-        2. Path and command are compatible
 
         Validates:
         1. Path is absolute
@@ -517,7 +508,7 @@ class OHEditor:
         """
         Implement the undo_edit command.
         """
-        current_text = self.read_file(path).expandtabs()
+        current_text = self.read_file(path)
         old_text = self._history_manager.pop_last_history(path)
         if old_text is None:
             raise ToolError(f'No edit history found for {path}.')
@@ -613,7 +604,6 @@ class OHEditor:
         snippet_content: str,
         snippet_description: str,
         start_line: int = 1,
-        expand_tabs: bool = True,
     ) -> str:
         """
         Generate output for the CLI based on the content of a code snippet.
@@ -621,8 +611,6 @@ class OHEditor:
         snippet_content = maybe_truncate(
             snippet_content, truncate_notice=FILE_CONTENT_TRUNCATED_NOTICE
         )
-        if expand_tabs:
-            snippet_content = snippet_content.expandtabs()
 
         snippet_content = '\n'.join(
             [
