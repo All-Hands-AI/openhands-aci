@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import tempfile
@@ -27,6 +28,9 @@ def persist_dir():
     shutil.rmtree(path)
 
 
+@pytest.mark.skipif(
+    os.getenv('CI') == 'true', reason='Skip resource-intensive test in CI'
+)
 def test_build_code_retriever(cloned_repo, persist_dir):
     retriever = build_code_retriever(
         repo_path=cloned_repo,
