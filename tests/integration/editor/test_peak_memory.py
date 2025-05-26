@@ -1,7 +1,7 @@
 """Tests for peak memory usage in file operations."""
 
 import os
-import resource
+import platform
 import tempfile
 from pathlib import Path
 
@@ -10,9 +10,17 @@ import pytest
 
 from openhands_aci.editor import file_editor
 
+# Skip all tests in this module on non-Unix platforms
+pytestmark = pytest.mark.skipif(
+    platform.system() != 'Linux' and platform.system() != 'Darwin',
+    reason='Memory usage tests are Unix-specific and require the resource module',
+)
+
 
 def get_memory_info():
     """Get current and peak memory usage in bytes."""
+    import resource
+
     process = psutil.Process(os.getpid())
     rss = process.memory_info().rss
     peak_rss = (
@@ -42,6 +50,8 @@ def create_test_file(path: Path, size_mb: float = 5.0):
 
 def set_memory_limit(file_size: int, multiplier: float = 2.0):
     """Set memory limit to multiplier * file_size."""
+    import resource
+
     # Add base memory for pytest and other processes (100MB)
     base_memory = 100 * 1024 * 1024  # 100MB
     memory_limit = int(file_size * multiplier + base_memory)
