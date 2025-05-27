@@ -1,5 +1,4 @@
 # This is copied from Magentic-one's great repo: https://github.com/microsoft/autogen/blob/v0.4.4/python/packages/autogen-magentic-one/src/autogen_magentic_one/markdown_browser/mdconvert.py
-# Thanks to Microsoft researchers for open-sourcing this!
 # type: ignore
 import base64
 import copy
