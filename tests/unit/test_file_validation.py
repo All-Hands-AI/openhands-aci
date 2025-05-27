@@ -76,8 +76,22 @@ def test_validate_pdf_file():
     # the is_binary function is not accurate for PDF files
     assert not is_binary(str(pdf_file))
 
-    # PDF should be detected as binary
+    # PDF is a supported file type, so no exception should be raised
+    editor.validate_file(pdf_file)
+
+
+def test_validate_image_file():
+    """Test that image files are detected as binary."""
+    editor = OHEditor()
+
+    # Get the current directory and construct path to the image file
+    current_dir = Path(__file__).parent
+    image_file = current_dir / 'data' / 'oh-logo.png'
+
+    assert is_binary(str(image_file))
+
+    # Images are not supported and should be detected as binary
     with pytest.raises(FileValidationError) as exc_info:
-        editor.validate_file(pdf_file)
+        editor.validate_file(image_file)
 
     assert 'file appears to be binary' in str(exc_info.value).lower()
