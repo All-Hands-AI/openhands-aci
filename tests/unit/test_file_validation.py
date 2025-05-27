@@ -71,7 +71,7 @@ def test_validate_pdf_file():
 
     # Get the current directory and construct path to the PDF file
     current_dir = Path(__file__).parent
-    pdf_file = current_dir / 'data' / 'caltrain_schedule.pdf'
+    pdf_file = current_dir / 'data' / 'sample.pdf'
 
     # the is_binary function is not accurate for PDF files
     assert not is_binary(str(pdf_file))
