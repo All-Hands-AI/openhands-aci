@@ -19,7 +19,12 @@ from .exceptions import (
     ToolError,
 )
 from .history import FileHistoryManager
-from .prompts import DIRECTORY_CONTENT_TRUNCATED_NOTICE, FILE_CONTENT_TRUNCATED_NOTICE
+from .md_converter import MarkdownConverter  # type: ignore
+from .prompts import (
+    BINARY_FILE_CONTENT_TRUNCATED_NOTICE,
+    DIRECTORY_CONTENT_TRUNCATED_NOTICE,
+    TEXT_FILE_CONTENT_TRUNCATED_NOTICE,
+)
 from .results import CLIResult, maybe_truncate
 
 Command = Literal[
@@ -45,6 +50,18 @@ class OHEditor:
 
     TOOL_NAME = 'oh_editor'
     MAX_FILE_SIZE_MB = 10  # Maximum file size in MB
+    SUPPORTED_BINARY_EXTENSIONS = [
+        # Office files
+        '.docx',
+        '.xlsx',
+        '.pptx',
+        '.pdf',
+        # Audio files
+        '.mp3',
+        '.wav',
+        '.m4a',
+        '.flac',
+    ]
 
     def __init__(
         self,
@@ -64,8 +81,13 @@ class OHEditor:
         self._max_file_size = (
             (max_file_size_mb or self.MAX_FILE_SIZE_MB) * 1024 * 1024
         )  # Convert to bytes
+
         # Initialize encoding manager
         self._encoding_manager = EncodingManager()
+
+        # Initialize Markdown converter
+        self._markdown_converter = MarkdownConverter()
+
         # Set cwd (current working directory) if workspace_root is provided
         if workspace_root is not None:
             workspace_path = Path(workspace_root)
@@ -286,6 +308,18 @@ class OHEditor:
 
         # Validate file and count lines
         self.validate_file(path)
+
+        # Handle supported binary files
+        if self.is_supported_binary_file(path):
+            file_content = self.read_file_markdown(path)
+            return CLIResult(
+                output=self._make_output(
+                    file_content, str(path), 1, is_converted_markdown=True
+                ),
+                path=str(path),
+                prev_exist=True,
+            )
+
         num_lines = self._count_lines(path)
 
         start_line = 1
@@ -497,12 +531,20 @@ class OHEditor:
                 path,
                 f'The path {path} does not exist. Please provide a valid path.',
             )
-        if command != 'view' and path.is_dir():
-            raise EditorToolParameterInvalidError(
-                'path',
-                path,
-                f'The path {path} is a directory and only the `view` command can be used on directories.',
-            )
+        if command != 'view':
+            if path.is_dir():
+                raise EditorToolParameterInvalidError(
+                    'path',
+                    path,
+                    f'The path {path} is a directory and only the `view` command can be used on directories.',
+                )
+
+            if self.is_supported_binary_file(path):
+                raise EditorToolParameterInvalidError(
+                    'path',
+                    path,
+                    f'The path {path} points to a binary file ({path.suffix}) and only the `view` command can be used on supported binary files.',
+                )
 
     def undo_edit(self, path: Path) -> CLIResult:
         """
@@ -546,17 +588,15 @@ class OHEditor:
                 reason=f'File is too large ({file_size / 1024 / 1024:.1f}MB). Maximum allowed size is {int(max_size / 1024 / 1024)}MB.',
             )
 
-        # Known file extensions that are binary, but may not be detected by is_binary
-        binary_extensions = [
-            '.pdf',
-        ]
-        is_definitely_binary = path.suffix.lower() in binary_extensions
+        # Skip supported binary formats
+        if self.is_supported_binary_file(path):
+            return
 
         # Check file type
-        if is_definitely_binary or is_binary(str(path)):
+        if is_binary(str(path)):
             raise FileValidationError(
                 path=str(path),
-                reason='File appears to be binary. Only text files can be edited.',
+                reason='File appears to be binary and this file type cannot be read or edited by this tool.',
             )
 
     @with_encoding
@@ -599,17 +639,41 @@ class OHEditor:
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to read {path}') from None
 
+    def read_file_markdown(self, path: Path) -> str:
+        try:
+            result = self._markdown_converter.convert(str(path))
+            return result.text_content
+        except Exception as e:
+            raise ToolError(
+                f'Error in converting file to Markdown: {str(e)}. Please use Python code to read {path}'
+            ) from None
+
+    def is_supported_binary_file(self, path: Path) -> bool:
+        return path.suffix.lower() in self.SUPPORTED_BINARY_EXTENSIONS
+
     def _make_output(
         self,
         snippet_content: str,
         snippet_description: str,
         start_line: int = 1,
+        is_converted_markdown: bool = False,
     ) -> str:
         """
         Generate output for the CLI based on the content of a code snippet.
         """
+        # If the content is converted from Markdown, we don't need line numbers
+        if is_converted_markdown:
+            snippet_content = maybe_truncate(
+                snippet_content, truncate_notice=BINARY_FILE_CONTENT_TRUNCATED_NOTICE
+            )
+            return (
+                f"Here's the content of the file {snippet_description} displayed in Markdown format:\n"
+                + snippet_content
+                + '\n'
+            )
+
         snippet_content = maybe_truncate(
-            snippet_content, truncate_notice=FILE_CONTENT_TRUNCATED_NOTICE
+            snippet_content, truncate_notice=TEXT_FILE_CONTENT_TRUNCATED_NOTICE
         )
 
         snippet_content = '\n'.join(

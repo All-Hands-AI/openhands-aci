@@ -10,7 +10,7 @@ from openhands_aci.editor.exceptions import (
 )
 from openhands_aci.editor.prompts import (
     DIRECTORY_CONTENT_TRUNCATED_NOTICE,
-    FILE_CONTENT_TRUNCATED_NOTICE,
+    TEXT_FILE_CONTENT_TRUNCATED_NOTICE,
 )
 from openhands_aci.editor.results import CLIResult, ToolResult
 
@@ -627,7 +627,7 @@ def test_view_large_file_with_truncation(editor, tmp_path):
 
     result = editor(command='view', path=str(large_file))
     assert isinstance(result, CLIResult)
-    assert FILE_CONTENT_TRUNCATED_NOTICE in result.output
+    assert TEXT_FILE_CONTENT_TRUNCATED_NOTICE in result.output
 
 
 def test_validate_path_suggests_absolute_path(editor, tmp_path):
