@@ -20,7 +20,11 @@ from .exceptions import (
 )
 from .history import FileHistoryManager
 from .md_converter import MarkdownConverter  # type: ignore
-from .prompts import DIRECTORY_CONTENT_TRUNCATED_NOTICE, FILE_CONTENT_TRUNCATED_NOTICE
+from .prompts import (
+    BINARY_FILE_CONTENT_TRUNCATED_NOTICE,
+    DIRECTORY_CONTENT_TRUNCATED_NOTICE,
+    TEXT_FILE_CONTENT_TRUNCATED_NOTICE,
+)
 from .results import CLIResult, maybe_truncate
 
 Command = Literal[
@@ -657,9 +661,11 @@ class OHEditor:
         """
         Generate output for the CLI based on the content of a code snippet.
         """
-        # If the content is converted from Markdown, we don't need to truncate it and we don't need
-        # line numbers
+        # If the content is converted from Markdown, we don't need line numbers
         if is_converted_markdown:
+            snippet_content = maybe_truncate(
+                snippet_content, truncate_notice=BINARY_FILE_CONTENT_TRUNCATED_NOTICE
+            )
             return (
                 f"Here's the content of the file {snippet_description} displayed in Markdown format:\n"
                 + snippet_content
@@ -667,7 +673,7 @@ class OHEditor:
             )
 
         snippet_content = maybe_truncate(
-            snippet_content, truncate_notice=FILE_CONTENT_TRUNCATED_NOTICE
+            snippet_content, truncate_notice=TEXT_FILE_CONTENT_TRUNCATED_NOTICE
         )
 
         snippet_content = '\n'.join(
