@@ -85,7 +85,7 @@ def test_validate_image_file():
     editor = OHEditor()
 
     # Get the current directory and construct path to the image file
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).parent.parent
     image_file = current_dir / 'data' / 'oh-logo.png'
 
     assert is_binary(str(image_file))

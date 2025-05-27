@@ -8,7 +8,7 @@ def test_view_pdf_file():
     editor = OHEditor()
 
     tests_dir = Path(__file__).parent.parent.parent
-    test_file = tests_dir / 'unit' / 'data' / 'sample.pdf'
+    test_file = tests_dir / 'data' / 'sample.pdf'
     result = editor(command='view', path=str(test_file))
 
     assert isinstance(result, CLIResult)
