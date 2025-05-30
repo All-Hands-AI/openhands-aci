@@ -49,7 +49,7 @@ cd openhands-aci
 
 2. Install development dependencies:
 ```bash
-poetry install
+poetry install --extras llama
 ```
 
 3. Configure pre-commit-hooks

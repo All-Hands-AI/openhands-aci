@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-aci"
-version = "0.2.14"
+version = "0.2.15"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 authors = ["OpenHands"]
 license = "MIT"
@@ -22,18 +22,21 @@ cachetools = "^5.5.2"
 charset-normalizer = "^3.4.1"
 pydantic = "^2.11.3"
 libcst = "1.5.0"
-llama-index = "^0.12.29"
-llama-index-core = "^0.12.29"
-llama-index-retrievers-bm25 = "^0.5.2"
 rapidfuzz = "^3.13.0"
 matplotlib = "^3.10.3"
 networkx = "^3.4.2"
 
+# Optional dependencies for llama-index functionality
+llama-index = { version = "^0.12.29", optional = true }
+llama-index-core = { version = "^0.12.29", optional = true }
+llama-index-retrievers-bm25 = { version = "^0.5.2", optional = true }
+
+[tool.poetry.extras]
+llama = ["llama-index", "llama-index-core", "llama-index-retrievers-bm25"]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.7.2"
 pre-commit = "^4.0.1"
-
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.3"
