@@ -1,3 +1,9 @@
+# Check if llama-index is installed
+try:
+    import llama_index
+except ImportError:
+    raise ImportError("llama-index is required for these tools. Install with: pip install openhands-aci[llama]")
+
 import collections
 import json
 import os
