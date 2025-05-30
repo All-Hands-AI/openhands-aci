@@ -32,7 +32,7 @@ jobs:
           echo 'export PATH="$HOME/.local/bin:$PATH"' >> $GITHUB_ENV
       - name: Install dependencies
         run: |
-          poetry install --with test
+          poetry install --with test --extras llama
         env:
           POETRY_VIRTUALENVS_CREATE: false
       - name: Run tests
