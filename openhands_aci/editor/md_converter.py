@@ -25,10 +25,12 @@ import pptx
 import puremagic
 import pydub
 import requests
-import speech_recognition as sr
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import SRTFormatter
+
+# Use our own audio module instead of speech_recognition
+from openhands_aci.utils.audio import AudioFile, Recognizer
 
 
 class _CustomMarkdownify(markdownify.MarkdownConverter):
@@ -726,8 +728,8 @@ class WavConverter(MediaConverter):
         )
 
     def _transcribe_audio(self, local_path) -> str:
-        recognizer = sr.Recognizer()
-        with sr.AudioFile(local_path) as source:
+        recognizer = Recognizer()
+        with AudioFile(local_path) as source:
             audio = recognizer.record(source)
             return recognizer.recognize_google(audio).strip()
 
