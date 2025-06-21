@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
+import warnings
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import parse_qs, quote, unquote, urlparse, urlunparse
 
@@ -23,12 +24,28 @@ import pptx
 
 # File-format detection
 import puremagic
-import pydub
 import requests
 import speech_recognition as sr
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import SRTFormatter
+
+# Conditionally import pydub and check for ffmpeg availability
+pydub = None
+pydub_available = False
+try:
+    # Temporarily suppress warnings during import
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        import pydub
+
+        # Check if ffmpeg or avconv is available
+        from pydub.utils import which
+
+        if which('ffmpeg') or which('avconv'):
+            pydub_available = True
+except (ImportError, RuntimeError):
+    pass
 
 
 class _CustomMarkdownify(markdownify.MarkdownConverter):
@@ -763,12 +780,23 @@ class Mp3Converter(WavConverter):
                 if f in metadata:
                     md_content += f'{f}: {metadata[f]}\n'
 
+        # Check if pydub is available with ffmpeg/avconv
+        if not pydub_available or pydub is None:
+            md_content += '\n\n### Audio Transcript:\nTranscription unavailable - ffmpeg/avconv not installed.'
+            return DocumentConverterResult(
+                title=os.path.basename(local_path),
+                text_content=md_content,
+            )
+
         # Transcribe
         handle, temp_path = tempfile.mkstemp(suffix='.wav')
         os.close(handle)
         try:
-            sound = pydub.AudioSegment.from_mp3(local_path)
-            sound.export(temp_path, format='wav')
+            # Use pydub with warnings suppressed
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                sound = pydub.AudioSegment.from_mp3(local_path)
+                sound.export(temp_path, format='wav')
 
             _args = dict()
             _args.update(kwargs)
