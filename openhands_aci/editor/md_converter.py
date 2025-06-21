@@ -36,11 +36,13 @@ pydub_available = False
 try:
     # Temporarily suppress warnings during import
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+        warnings.simplefilter('ignore')
         import pydub
+
         # Check if ffmpeg or avconv is available
         from pydub.utils import which
-        if which("ffmpeg") or which("avconv"):
+
+        if which('ffmpeg') or which('avconv'):
             pydub_available = True
 except (ImportError, RuntimeError):
     pass
@@ -792,7 +794,7 @@ class Mp3Converter(WavConverter):
         try:
             # Use pydub with warnings suppressed
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
+                warnings.simplefilter('ignore')
                 sound = pydub.AudioSegment.from_mp3(local_path)
                 sound.export(temp_path, format='wav')
 
