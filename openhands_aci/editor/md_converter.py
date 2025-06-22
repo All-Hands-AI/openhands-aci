@@ -822,6 +822,152 @@ class Mp3Converter(WavConverter):
         )
 
 
+class M4aConverter(WavConverter):
+    """
+    Converts M4A files to markdown via extraction of metadata (if `exiftool` is installed), and speech transcription (if `speech_recognition` AND `pydub` are installed).
+    """
+
+    def convert(self, local_path, **kwargs) -> Union[None, DocumentConverterResult]:
+        # Bail if not a M4A
+        extension = kwargs.get('file_extension', '')
+        if extension.lower() != '.m4a':
+            return None
+
+        md_content = ''
+
+        # Add metadata
+        metadata = self._get_metadata(local_path)
+        if metadata:
+            for f in [
+                'Title',
+                'Artist',
+                'Author',
+                'Band',
+                'Album',
+                'Genre',
+                'Track',
+                'DateTimeOriginal',
+                'CreateDate',
+                'Duration',
+            ]:
+                if f in metadata:
+                    md_content += f'{f}: {metadata[f]}\n'
+
+        # Check if pydub is available with ffmpeg/avconv
+        if not pydub_available or pydub is None:
+            md_content += '\n\n### Audio Transcript:\nTranscription unavailable - ffmpeg/avconv not installed.'
+            return DocumentConverterResult(
+                title=os.path.basename(local_path),
+                text_content=md_content,
+            )
+
+        # Transcribe
+        handle, temp_path = tempfile.mkstemp(suffix='.wav')
+        os.close(handle)
+        try:
+            # Use pydub with warnings suppressed
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                sound = pydub.AudioSegment.from_file(local_path, format='m4a')
+                sound.export(temp_path, format='wav')
+
+            _args = dict()
+            _args.update(kwargs)
+            _args['file_extension'] = '.wav'
+
+            try:
+                transcript = super()._transcribe_audio(temp_path).strip()
+                md_content += '\n\n### Audio Transcript:\n' + (
+                    '[No speech detected]' if transcript == '' else transcript
+                )
+            except Exception:
+                md_content += (
+                    '\n\n### Audio Transcript:\nError. Could not transcribe this audio.'
+                )
+
+        finally:
+            os.unlink(temp_path)
+
+        # Return the result
+        return DocumentConverterResult(
+            title=None,
+            text_content=md_content.strip(),
+        )
+
+
+class FlacConverter(WavConverter):
+    """
+    Converts FLAC files to markdown via extraction of metadata (if `exiftool` is installed), and speech transcription (if `speech_recognition` AND `pydub` are installed).
+    """
+
+    def convert(self, local_path, **kwargs) -> Union[None, DocumentConverterResult]:
+        # Bail if not a FLAC
+        extension = kwargs.get('file_extension', '')
+        if extension.lower() != '.flac':
+            return None
+
+        md_content = ''
+
+        # Add metadata
+        metadata = self._get_metadata(local_path)
+        if metadata:
+            for f in [
+                'Title',
+                'Artist',
+                'Author',
+                'Band',
+                'Album',
+                'Genre',
+                'Track',
+                'DateTimeOriginal',
+                'CreateDate',
+                'Duration',
+            ]:
+                if f in metadata:
+                    md_content += f'{f}: {metadata[f]}\n'
+
+        # Check if pydub is available with ffmpeg/avconv
+        if not pydub_available or pydub is None:
+            md_content += '\n\n### Audio Transcript:\nTranscription unavailable - ffmpeg/avconv not installed.'
+            return DocumentConverterResult(
+                title=os.path.basename(local_path),
+                text_content=md_content,
+            )
+
+        # Transcribe
+        handle, temp_path = tempfile.mkstemp(suffix='.wav')
+        os.close(handle)
+        try:
+            # Use pydub with warnings suppressed
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                sound = pydub.AudioSegment.from_file(local_path, format='flac')
+                sound.export(temp_path, format='wav')
+
+            _args = dict()
+            _args.update(kwargs)
+            _args['file_extension'] = '.wav'
+
+            try:
+                transcript = super()._transcribe_audio(temp_path).strip()
+                md_content += '\n\n### Audio Transcript:\n' + (
+                    '[No speech detected]' if transcript == '' else transcript
+                )
+            except Exception:
+                md_content += (
+                    '\n\n### Audio Transcript:\nError. Could not transcribe this audio.'
+                )
+
+        finally:
+            os.unlink(temp_path)
+
+        # Return the result
+        return DocumentConverterResult(
+            title=None,
+            text_content=md_content.strip(),
+        )
+
+
 class ImageConverter(MediaConverter):
     """
     Converts images to markdown via extraction of metadata (if `exiftool` is installed), OCR (if `easyocr` is installed), and description via a multimodal LLM (if an mlm_client is configured).
@@ -947,6 +1093,8 @@ class MarkdownConverter:
         self.register_page_converter(PptxConverter())
         self.register_page_converter(WavConverter())
         self.register_page_converter(Mp3Converter())
+        self.register_page_converter(M4aConverter())
+        self.register_page_converter(FlacConverter())
         self.register_page_converter(ImageConverter())
         self.register_page_converter(PdfConverter())
 
