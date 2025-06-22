@@ -38,9 +38,11 @@ class TestAudioIntegration(unittest.TestCase):
         result = self.converter.convert_local(mp3_file)
         self.assertIsNotNone(result)
         self.assertIn('Audio Transcript:', result.text_content)
-        self.assertIn(
-            '1 2', result.text_content
-        )  # 3 is not picked up due to the limitation of the ASR API
+
+        if not os.system('which ffmpeg') == 0:
+            self.assertIn('ffmpeg/avconv not installed', result.text_content)
+        else:
+            self.assertIn('1 2', result.text_content)
 
     def test_markdown_converter_m4a_file(self):
         """Test MarkdownConverter with M4A file."""
@@ -51,9 +53,11 @@ class TestAudioIntegration(unittest.TestCase):
         result = self.converter.convert_local(m4a_file)
         self.assertIsNotNone(result)
         self.assertIn('Audio Transcript:', result.text_content)
-        self.assertIn(
-            '1 2', result.text_content
-        )  # 3 is not picked up due to the limitation of the ASR API
+
+        if not os.system('which ffmpeg') == 0:
+            self.assertIn('ffmpeg/avconv not installed', result.text_content)
+        else:
+            self.assertIn('1 2', result.text_content)
 
     def test_markdown_converter_flac_file(self):
         """Test MarkdownConverter with FLAC file."""
@@ -64,9 +68,11 @@ class TestAudioIntegration(unittest.TestCase):
         result = self.converter.convert_local(flac_file)
         self.assertIsNotNone(result)
         self.assertIn('Audio Transcript:', result.text_content)
-        self.assertIn(
-            '1 2', result.text_content
-        )  # 3 is not picked up due to the limitation of the ASR API
+
+        if not os.system('which ffmpeg') == 0:
+            self.assertIn('ffmpeg/avconv not installed', result.text_content)
+        else:
+            self.assertIn('1 2', result.text_content)
 
     def test_all_audio_formats_produce_similar_output(self):
         """Test that all audio formats produce similar output structure."""
