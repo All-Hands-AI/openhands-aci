@@ -151,6 +151,36 @@ class OHEditor:
             f'Unrecognized command {command}. The allowed commands for the {self.TOOL_NAME} tool are: {", ".join(get_args(Command))}'
         )
 
+    def _get_directory_listing(self, path: Path) -> str:
+        """Get a formatted directory listing for the given path.
+
+        Args:
+            path: Path to the directory
+
+        Returns:
+            Formatted directory listing string
+
+        Raises:
+            ToolError: If there's an error reading the directory
+        """
+        # Get files/dirs up to 2 levels deep, excluding hidden entries
+        _, stdout, stderr = run_shell_cmd(
+            rf"find -L {path} -maxdepth 2 -not \( -path '{path}/\.*' -o -path '{path}/*/\.*' \) | sort"
+        )
+        if stderr:
+            raise ToolError(f'Error reading directory {path}: {stderr}')
+
+        # Add trailing slashes to directories
+        paths = stdout.strip().split('\n') if stdout.strip() else []
+        formatted_paths = []
+        for p in paths:
+            if Path(p).is_dir():
+                formatted_paths.append(f'{p}/')
+            else:
+                formatted_paths.append(p)
+
+        return '\n'.join(formatted_paths)
+
     @with_encoding
     def _count_lines(self, path: Path, encoding: str = 'utf-8') -> int:
         """
@@ -618,23 +648,8 @@ class OHEditor:
         """
         # Handle directories by returning directory listing
         if path.is_dir():
-            # Get files/dirs up to 2 levels deep, excluding hidden entries
-            _, stdout, stderr = run_shell_cmd(
-                rf"find -L {path} -maxdepth 2 -not \( -path '{path}/\.*' -o -path '{path}/*/\.*' \) | sort"
-            )
-            if stderr:
-                raise ToolError(f'Error reading directory {path}: {stderr}')
-
-            # Add trailing slashes to directories
-            paths = stdout.strip().split('\n') if stdout.strip() else []
-            formatted_paths = []
-            for p in paths:
-                if Path(p).is_dir():
-                    formatted_paths.append(f'{p}/')
-                else:
-                    formatted_paths.append(p)
-
-            return f'Directory listing for {path}:\n' + '\n'.join(formatted_paths)
+            directory_listing = self._get_directory_listing(path)
+            return f'Directory listing for {path}:\n{directory_listing}'
 
         self.validate_file(path)
         try:
