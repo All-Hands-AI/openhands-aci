@@ -616,6 +616,10 @@ class OHEditor:
             end_line: Optional end line number (1-based). Must be provided with start_line.
             encoding: The encoding to use when reading the file (auto-detected by decorator)
         """
+        # Check if path is a directory before attempting to read
+        if path.is_dir():
+            raise ToolError(f'Cannot read {path}: it is a directory, not a file.')
+
         self.validate_file(path)
         try:
             if start_line is not None and end_line is not None:
