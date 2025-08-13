@@ -11,35 +11,42 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-gitpython = "*"
-tree-sitter = "^0.24.0"
-tree-sitter-language-pack = "0.7.3"
-grep-ast = "^0.9.0"
-flake8 = "*"
-whatthepatch = "^1.0.6"
+# Core editor dependencies
 binaryornot = "^0.4.4"
 cachetools = "^5.5.2"
 charset-normalizer = "^3.4.1"
 pydantic = "^2.11.3"
-libcst = "1.5.0"
-rapidfuzz = "^3.13.0"
-pandas = "*"
-matplotlib = "^3.10.3"
-networkx = "^3.4.2"
-beautifulsoup4 = ">=4.12.3"
-mammoth = ">=1.8.0"
-markdownify = ">=0.13.1"
-pdfminer-six = ">=20240706"
-puremagic = ">=1.28"
-pypdf = ">=5.1.0"
-python-pptx = "^1.0.2"
-requests = ">=2.32.3"
-youtube-transcript-api = ">=0.6.2"
-pydub = "^0.25.1"
-pypdf2 = "^3.0.1"
-xlrd = "^2.0.1"
-speechrecognition = "^3.14.1"
-openpyxl = "^3.1.5"
+# Linter dependencies
+tree-sitter = "^0.24.0"
+tree-sitter-language-pack = "0.7.3"
+grep-ast = "^0.9.0"
+flake8 = "*"
+# Utils dependencies
+whatthepatch = "^1.0.6"
+
+# Optional dependencies for document processing
+beautifulsoup4 = { version = ">=4.12.3", optional = true }
+mammoth = { version = ">=1.8.0", optional = true }
+markdownify = { version = ">=0.13.1", optional = true }
+pdfminer-six = { version = ">=20240706", optional = true }
+puremagic = { version = ">=1.28", optional = true }
+pypdf = { version = ">=5.1.0", optional = true }
+python-pptx = { version = "^1.0.2", optional = true }
+requests = { version = ">=2.32.3", optional = true }
+youtube-transcript-api = { version = ">=0.6.2", optional = true }
+pydub = { version = "^0.25.1", optional = true }
+pypdf2 = { version = "^3.0.1", optional = true }
+xlrd = { version = "^2.0.1", optional = true }
+speechrecognition = { version = "^3.14.1", optional = true }
+openpyxl = { version = "^3.1.5", optional = true }
+
+# Optional dependencies for indexing functionality
+pandas = { version = "*", optional = true }
+matplotlib = { version = "^3.10.3", optional = true }
+networkx = { version = "^3.4.2", optional = true }
+gitpython = { version = "*", optional = true }
+libcst = { version = "1.5.0", optional = true }
+rapidfuzz = { version = "^3.13.0", optional = true }
 
 # Optional dependencies for llama-index functionality
 llama-index = { version = "^0.12.29", optional = true }
@@ -47,7 +54,22 @@ llama-index-core = { version = "^0.12.29", optional = true }
 llama-index-retrievers-bm25 = { version = "^0.5.2", optional = true }
 
 [tool.poetry.extras]
+documents = [
+    "beautifulsoup4", "mammoth", "markdownify", "pdfminer-six", "puremagic", 
+    "pypdf", "python-pptx", "requests", "youtube-transcript-api", "pydub", 
+    "pypdf2", "xlrd", "speechrecognition", "openpyxl"
+]
+indexing = [
+    "pandas", "matplotlib", "networkx", "gitpython", "libcst", "rapidfuzz"
+]
 llama = ["llama-index", "llama-index-core", "llama-index-retrievers-bm25"]
+all = [
+    "beautifulsoup4", "mammoth", "markdownify", "pdfminer-six", "puremagic", 
+    "pypdf", "python-pptx", "requests", "youtube-transcript-api", "pydub", 
+    "pypdf2", "xlrd", "speechrecognition", "openpyxl", "pandas", "matplotlib", 
+    "networkx", "gitpython", "libcst", "rapidfuzz", "llama-index", 
+    "llama-index-core", "llama-index-retrievers-bm25"
+]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.7.2"
