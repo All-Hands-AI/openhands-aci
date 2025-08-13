@@ -19,7 +19,6 @@ from .exceptions import (
     ToolError,
 )
 from .history import FileHistoryManager
-from .md_converter import MarkdownConverter  # type: ignore
 from .prompts import (
     BINARY_FILE_CONTENT_TRUNCATED_NOTICE,
     DIRECTORY_CONTENT_TRUNCATED_NOTICE,
@@ -85,8 +84,12 @@ class OHEditor:
         # Initialize encoding manager
         self._encoding_manager = EncodingManager()
 
-        # Initialize Markdown converter
-        self._markdown_converter = MarkdownConverter()
+        # Initialize Markdown converter (optional dependency)
+        try:
+            from .md_converter import MarkdownConverter
+            self._markdown_converter = MarkdownConverter()
+        except ImportError:
+            self._markdown_converter = None
 
         # Set cwd (current working directory) if workspace_root is provided
         if workspace_root is not None:
@@ -640,6 +643,10 @@ class OHEditor:
             raise ToolError(f'Ran into {e} while trying to read {path}') from None
 
     def read_file_markdown(self, path: Path) -> str:
+        if self._markdown_converter is None:
+            raise ToolError(
+                f'Markdown conversion not available. Install document processing dependencies with: pip install openhands-aci[documents]'
+            )
         try:
             result = self._markdown_converter.convert(str(path))
             return result.text_content
