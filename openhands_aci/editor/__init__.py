@@ -8,10 +8,13 @@ from .file_cache import FileCache
 from .results import ToolResult
 
 _GLOBAL_EDITOR = OHEditor()
+from .gemini_editor import GeminiEditor
+
 
 __all__ = [
     'Command',
     'OHEditor',
+    'GeminiEditor',
     'ToolError',
     'ToolResult',
     'FileCache',
