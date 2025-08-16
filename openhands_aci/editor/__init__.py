@@ -6,10 +6,9 @@ from .encoding import EncodingManager, with_encoding
 from .exceptions import ToolError
 from .file_cache import FileCache
 from .results import ToolResult
-
-_GLOBAL_EDITOR = OHEditor()
 from .gemini_editor import GeminiEditor
 
+_GLOBAL_EDITOR = OHEditor()
 
 __all__ = [
     'Command',
