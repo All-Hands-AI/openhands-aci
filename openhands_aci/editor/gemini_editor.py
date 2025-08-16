@@ -113,7 +113,9 @@ class GeminiEditor(OHEditor):
         raw_text_no_translate = raw_bytes.decode(encoding, errors='replace')
 
         # Normalized for matching
-        normalized_text = raw_text_no_translate.replace('\r\n', '\n').replace('\r', '\n')
+        normalized_text = raw_text_no_translate.replace('\r\n', '\n').replace(
+            '\r', '\n'
+        )
 
         if old == '':
             # Creating into existing file is ambiguous; align to error
