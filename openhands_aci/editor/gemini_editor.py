@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .editor import OHEditor
-from .exceptions import EditorToolParameterInvalidError, EditorToolParameterMissingError, ToolError
+from .exceptions import (
+    EditorToolParameterInvalidError,
+    EditorToolParameterMissingError,
+    ToolError,
+)
 from .results import CLIResult
 
 
@@ -44,20 +48,26 @@ class GeminiEditor(OHEditor):
         try:
             if not _path.is_absolute():
                 raise EditorToolParameterInvalidError(
-                    'path', path, 'The path should be an absolute path, starting with `/`.'
+                    'path',
+                    path,
+                    'The path should be an absolute path, starting with `/`.',
                 )
             # Enforce workspace boundary if configured
             if getattr(self, '_cwd', None) is not None:
                 try:
                     if not _path.resolve().is_relative_to(self._cwd):  # type: ignore[arg-type]
                         raise EditorToolParameterInvalidError(
-                            'path', path, f'Path must be inside the workspace root: {self._cwd}'
+                            'path',
+                            path,
+                            f'Path must be inside the workspace root: {self._cwd}',
                         )
                 except Exception:
                     # Fallback: basic prefix check if resolve/is_relative_to not available
                     if not str(_path.resolve()).startswith(str(self._cwd)):
                         raise EditorToolParameterInvalidError(
-                            'path', path, f'Path must be inside the workspace root: {self._cwd}'
+                            'path',
+                            path,
+                            f'Path must be inside the workspace root: {self._cwd}',
                         )
             if command != 'replace':
                 raise ToolError(
@@ -70,7 +80,9 @@ class GeminiEditor(OHEditor):
             # Disallow directories
             if _path.is_dir():
                 raise EditorToolParameterInvalidError(
-                    'path', path, f'The path {path} is a directory and only the `view` command can be used on directories.'
+                    'path',
+                    path,
+                    f'The path {path} is a directory and only the `view` command can be used on directories.',
                 )
 
             return self._replace(_path, old_str, new_str, expected_replacements)
@@ -120,7 +132,9 @@ class GeminiEditor(OHEditor):
         if old == '':
             # Creating into existing file is ambiguous; align to error
             raise EditorToolParameterInvalidError(
-                'old_string', old, 'old_string cannot be empty when the file already exists.'
+                'old_string',
+                old,
+                'old_string cannot be empty when the file already exists.',
             )
 
         count = normalized_text.count(old)
@@ -132,9 +146,7 @@ class GeminiEditor(OHEditor):
             raise ToolError('0 occurrences found')
         if count != expected:
             # Match test expectation wording
-            raise ToolError(
-                f'Expected {expected} occurrences but found {count}'
-            )
+            raise ToolError(f'Expected {expected} occurrences but found {count}')
 
         replaced_normalized = normalized_text.replace(old, new)
 
