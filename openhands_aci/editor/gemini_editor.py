@@ -21,10 +21,10 @@ class GeminiEditor(OHEditor):
     Gemini-CLI–compatible editor subset for filesystem operations used by Gemini models.
 
     Currently implements only the `replace` command with behavior aligned to Gemini CLI:
-    - Literal replacement with CRLF -> LF normalization when matching
+    - Literal replacement with CRLF/CR -> LF normalization when matching
     - Error if old_string == new_string
     - If old_string == '' and file does not exist: create file with new_string
-    - If file does not exist and old_string != '': error
+    - If file does not exist and old_string != '': return error
     - expected_replacements default = 1; enforce exact match count; error on 0 or mismatch
     """
 
@@ -41,38 +41,41 @@ class GeminiEditor(OHEditor):
         **_: object,
     ) -> CLIResult:
         _path = Path(path)
-        if not _path.is_absolute():
-            raise EditorToolParameterInvalidError(
-                'path', path, 'The path should be an absolute path, starting with `/`.'
-            )
-        # Enforce workspace boundary if configured
-        if getattr(self, '_cwd', None) is not None:
-            try:
-                if not _path.resolve().is_relative_to(self._cwd):  # type: ignore[arg-type]
-                    raise EditorToolParameterInvalidError(
-                        'path', path, f'Path must be inside the workspace root: {self._cwd}'
-                    )
-            except Exception:
-                # Fallback: basic prefix check if resolve/is_relative_to not available
-                if not str(_path.resolve()).startswith(str(self._cwd)):
-                    raise EditorToolParameterInvalidError(
-                        'path', path, f'Path must be inside the workspace root: {self._cwd}'
-                    )
-        if command != 'replace':
-            raise ToolError(
-                f'Unrecognized command {command}. The allowed command for the {self.TOOL_NAME} tool is: replace.'
-            )
-        if new_str is None:
-            raise EditorToolParameterMissingError('replace', 'new_string')
-        if old_str is None:
-            old_str = ''
-        # Disallow directories
-        if _path.is_dir():
-            raise EditorToolParameterInvalidError(
-                'path', path, f'The path {path} is a directory and only the `view` command can be used on directories.'
-            )
+        try:
+            if not _path.is_absolute():
+                raise EditorToolParameterInvalidError(
+                    'path', path, 'The path should be an absolute path, starting with `/`.'
+                )
+            # Enforce workspace boundary if configured
+            if getattr(self, '_cwd', None) is not None:
+                try:
+                    if not _path.resolve().is_relative_to(self._cwd):  # type: ignore[arg-type]
+                        raise EditorToolParameterInvalidError(
+                            'path', path, f'Path must be inside the workspace root: {self._cwd}'
+                        )
+                except Exception:
+                    # Fallback: basic prefix check if resolve/is_relative_to not available
+                    if not str(_path.resolve()).startswith(str(self._cwd)):
+                        raise EditorToolParameterInvalidError(
+                            'path', path, f'Path must be inside the workspace root: {self._cwd}'
+                        )
+            if command != 'replace':
+                raise ToolError(
+                    f'Unrecognized command {command}. The allowed command for the {self.TOOL_NAME} tool is: replace.'
+                )
+            if new_str is None:
+                raise EditorToolParameterMissingError('replace', 'new_string')
+            if old_str is None:
+                old_str = ''
+            # Disallow directories
+            if _path.is_dir():
+                raise EditorToolParameterInvalidError(
+                    'path', path, f'The path {path} is a directory and only the `view` command can be used on directories.'
+                )
 
-        return self._replace(_path, old_str, new_str, expected_replacements)
+            return self._replace(_path, old_str, new_str, expected_replacements)
+        except ToolError as e:
+            return CLIResult(error=e.message, path=str(_path))
 
     def _replace(
         self,
@@ -82,8 +85,9 @@ class GeminiEditor(OHEditor):
         expected: int | None,
     ) -> CLIResult:
         if new == old:
+            # Match test expectation wording
             raise EditorToolParameterInvalidError(
-                'new_string', new, 'No replacement performed: new_string and old_string are identical.'
+                'new_string', new, 'new_string must be different from old_string'
             )
 
         # File existence handling
@@ -100,11 +104,16 @@ class GeminiEditor(OHEditor):
                     new_content=new,
                 )
             else:
-                raise ToolError(f'The path {path} does not exist. Please provide a valid path.')
+                # Match test expectation wording
+                raise ToolError(f'The file does not exist: {path}')
 
-        # Read raw content and normalize only for matching
-        raw_text = self.read_file(path)
-        normalized_text = raw_text.replace('\r\n', '\n').replace('\r', '\n')
+        # Detect original EOL style from raw bytes and get text without translation
+        encoding = self._encoding_manager.get_encoding(path)
+        raw_bytes = path.read_bytes()
+        raw_text_no_translate = raw_bytes.decode(encoding, errors='replace')
+
+        # Normalized for matching
+        normalized_text = raw_text_no_translate.replace('\r\n', '\n').replace('\r', '\n')
 
         if old == '':
             # Creating into existing file is ambiguous; align to error
@@ -117,26 +126,26 @@ class GeminiEditor(OHEditor):
             expected = 1
 
         if count == 0:
-            raise ToolError(
-                f'No replacement was performed; old_string did not appear in {path}.'
-            )
+            # Match test expectation wording
+            raise ToolError('0 occurrences found')
         if count != expected:
+            # Match test expectation wording
             raise ToolError(
-                f'Expected {expected} replacements, but found {count} occurrences. Please refine your old_string or adjust expected_replacements.'
+                f'Expected {expected} occurrences but found {count}'
             )
 
         replaced_normalized = normalized_text.replace(old, new)
 
-        # Restore original line endings style
-        if '\r\n' in raw_text:
+        # Restore original line endings style based on raw bytes
+        if b'\r\n' in raw_bytes:
             new_text = replaced_normalized.replace('\n', '\r\n')
-        elif '\r' in raw_text and '\n' not in raw_text:
+        elif b'\r' in raw_bytes and b'\n' not in raw_bytes:
             new_text = replaced_normalized.replace('\n', '\r')
         else:
             new_text = replaced_normalized
 
         # Persist changes
-        self._history_manager.add_history(path, raw_text)
+        self._history_manager.add_history(path, raw_text_no_translate)
         self.write_file(path, new_text)
 
         success_message = f'Replaced {count} occurrence(s) in {path}.\nReview the changes and ensure they are as expected.'
@@ -144,6 +153,6 @@ class GeminiEditor(OHEditor):
             output=success_message,
             path=str(path),
             prev_exist=True,
-            old_content=raw_text,
+            old_content=raw_text_no_translate,
             new_content=new_text,
         )
