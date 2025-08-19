@@ -348,22 +348,20 @@ class OHEditor:
                 f'Its first element `{start_line}` should be within the range of lines of the file: {[1, num_lines]}.',
             )
 
-        if end_line > num_lines:
-            raise EditorToolParameterInvalidError(
-                'view_range',
-                view_range,
-                f'Its second element `{end_line}` should be smaller than the number of lines in the file: `{num_lines}`.',
-            )
+        # Normalize end_line and provide a warning if it exceeds file length
+        warning_message: str | None = None
+        if end_line == -1:
+            end_line = num_lines
+        elif end_line > num_lines:
+            warning_message = f"We only show up to {num_lines} since there's only {num_lines} lines in this file"
+            end_line = num_lines
 
-        if end_line != -1 and end_line < start_line:
+        if end_line < start_line:
             raise EditorToolParameterInvalidError(
                 'view_range',
                 view_range,
                 f'Its second element `{end_line}` should be greater than or equal to the first element `{start_line}`.',
             )
-
-        if end_line == -1:
-            end_line = num_lines
 
         file_content = self.read_file(path, start_line=start_line, end_line=end_line)
 
@@ -371,6 +369,10 @@ class OHEditor:
         output = self._make_output(
             '\n'.join(file_content.splitlines()), str(path), start_line
         )  # Remove extra newlines
+
+        # Append warning if we truncated the end_line
+        if warning_message:
+            output += f'\nNOTE: {warning_message}\n'
 
         return CLIResult(
             path=str(path),
