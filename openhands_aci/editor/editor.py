@@ -204,9 +204,23 @@ class OHEditor:
         ]
 
         if not occurrences:
-            raise ToolError(
-                f'No replacement was performed, old_str `{old_str}` did not appear verbatim in {path}.'
-            )
+            # We found no occurrences, possibly because of extra white spaces at either the front or back of the string.
+            # Remove the white spaces and try again.
+            old_str = old_str.strip()
+            new_str = new_str.strip()
+            pattern = re.escape(old_str)
+            occurrences = [
+                (
+                    file_content.count('\n', 0, match.start()) + 1,  # line number
+                    match.group(),  # matched text
+                    match.start(),  # start position
+                )
+                for match in re.finditer(pattern, file_content)
+            ]
+            if not occurrences:
+                raise ToolError(
+                    f'No replacement was performed, old_str `{old_str}` did not appear verbatim in {path}.'
+                )
         if len(occurrences) > 1:
             line_numbers = sorted(set(line for line, _, _ in occurrences))
             raise ToolError(
