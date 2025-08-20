@@ -370,9 +370,9 @@ class OHEditor:
             '\n'.join(file_content.splitlines()), str(path), start_line
         )  # Remove extra newlines
 
-        # Append warning if we truncated the end_line
+        # Prepend warning if we truncated the end_line
         if warning_message:
-            output += f'\nNOTE: {warning_message}\n'
+            output = f'NOTE: {warning_message}\n\n{output}'
 
         return CLIResult(
             path=str(path),
