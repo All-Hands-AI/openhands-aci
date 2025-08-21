@@ -353,7 +353,7 @@ class OHEditor:
         if end_line == -1:
             end_line = num_lines
         elif end_line > num_lines:
-            warning_message = f"We only show up to {num_lines} since there's only {num_lines} lines in this file"
+            warning_message = f"We only show up to {num_lines} since there're only {num_lines} lines in this file."
             end_line = num_lines
 
         if end_line < start_line:
