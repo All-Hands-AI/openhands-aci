@@ -86,7 +86,7 @@ def test_view_range_validation(temp_file):
         'should be a list of two integers' in result_json['formatted_output_and_error']
     )
 
-    # Test out of bounds range
+    # Test out of bounds range: should clamp to file end and show a warning
     result = file_editor(
         command='view',
         path=temp_file,
@@ -94,10 +94,7 @@ def test_view_range_validation(temp_file):
         enable_linting=False,
     )
     result_json = parse_result(result)
-    assert (
-        'should be smaller than the number of lines'
-        in result_json['formatted_output_and_error']
-    )
+    assert 'NOTE: We only show up to 3 since there\'re only 3 lines in this file.' in result_json['formatted_output_and_error']
 
     # Test invalid range order
     result = file_editor(
