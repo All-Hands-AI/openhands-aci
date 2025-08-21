@@ -372,7 +372,7 @@ class OHEditor:
 
         # Prepend warning if we truncated the end_line
         if warning_message:
-            output = f'NOTE: {warning_message}\n\n{output}'
+            output = f'NOTE: {warning_message}\n{output}'
 
         return CLIResult(
             path=str(path),
