@@ -5,9 +5,14 @@ import tempfile
 
 import pytest
 
-from openhands_aci.indexing.locagent.repo.chunk_index.code_retriever import (
-    build_code_retriever_from_repo as build_code_retriever,
-)
+# Check if indexing dependencies are available
+try:
+    from openhands_aci.indexing.locagent.repo.chunk_index.code_retriever import (
+        build_code_retriever_from_repo as build_code_retriever,
+    )
+    INDEXING_AVAILABLE = True
+except ImportError:
+    INDEXING_AVAILABLE = False
 
 
 @pytest.fixture(scope='module')
@@ -30,6 +35,9 @@ def persist_dir():
 
 @pytest.mark.skipif(
     os.getenv('CI') == 'true', reason='Skip resource-intensive test in CI'
+)
+@pytest.mark.skipif(
+    not INDEXING_AVAILABLE, reason='Indexing dependencies not available'
 )
 def test_build_code_retriever(cloned_repo, persist_dir):
     retriever = build_code_retriever(

@@ -5,8 +5,16 @@ from dataclasses import dataclass, field
 from importlib import resources
 from typing import Callable, List, Optional, Tuple
 
-import networkx as nx
-from llama_index.core import get_tokenizer
+# Optional imports for indexing functionality
+try:
+    import networkx as nx
+    from llama_index.core import get_tokenizer
+    INDEXING_AVAILABLE = True
+except ImportError as e:
+    nx = None
+    get_tokenizer = None
+    INDEXING_AVAILABLE = False
+    _missing_import = str(e)
 from tree_sitter import Language, Node, Parser
 # from tree_sitter_language_pack import get_parser
 from ..codeblocks import (
