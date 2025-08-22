@@ -5,6 +5,7 @@ from .editor import Command, OHEditor
 from .encoding import EncodingManager, with_encoding
 from .exceptions import ToolError
 from .file_cache import FileCache
+from .gemini_editor import GeminiEditor
 from .results import ToolResult
 
 _GLOBAL_EDITOR = OHEditor()
@@ -12,6 +13,7 @@ _GLOBAL_EDITOR = OHEditor()
 __all__ = [
     'Command',
     'OHEditor',
+    'GeminiEditor',
     'ToolError',
     'ToolResult',
     'FileCache',
