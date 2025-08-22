@@ -32,14 +32,14 @@ class FileCache:
         logger.debug(f'Current size updated: {self.current_size}')
 
     def set(self, key: str, value: Any) -> None:
-        file_path = self._get_file_path(key)
+        path = self._get_file_path(key)
         content = json.dumps({'key': key, 'value': value})
         content_size = len(content.encode('utf-8'))
         logger.debug(f'Setting key: {key}, content_size: {content_size}')
 
         if self.size_limit is not None:
-            if file_path.exists():
-                old_size = file_path.stat().st_size
+            if path.is_file():
+                old_size = path.stat().st_size
                 size_diff = content_size - old_size
                 logger.debug(
                     f'Existing file: old_size: {old_size}, size_diff: {size_diff}'
@@ -52,7 +52,7 @@ class FileCache:
                         logger.debug(
                             f'Evicting oldest (existing file case): current_size: {self.current_size}, size_limit: {self.size_limit}'
                         )
-                        self._evict_oldest(file_path)
+                        self._evict_oldest(path)
             else:
                 while (
                     self.current_size + content_size > self.size_limit and len(self) > 1
@@ -60,30 +60,25 @@ class FileCache:
                     logger.debug(
                         f'Evicting oldest (new file case): current_size: {self.current_size}, size_limit: {self.size_limit}'
                     )
-                    self._evict_oldest(file_path)
+                    self._evict_oldest(path)
 
-        if file_path.exists():
-            self.current_size -= file_path.stat().st_size
+        if path.is_file():
+            self.current_size -= path.stat().st_size
             logger.debug(
                 f'Existing file removed from current_size: {self.current_size}'
             )
 
-        with open(file_path, 'w') as f:
+        with open(path, 'w') as f:
             f.write(content)
 
         self.current_size += content_size
         logger.debug(f'File written, new current_size: {self.current_size}')
-        os.utime(
-            file_path, (time.time(), time.time())
-        )  # Update access and modification time
+        # Update access and modification time
+        os.utime(path, (time.time(), time.time()))
 
     def _evict_oldest(self, exclude_path: Optional[Path] = None):
         oldest_file = min(
-            (
-                f
-                for f in self.directory.glob('*.json')
-                if f.is_file() and f != exclude_path
-            ),
+            (f for f in self.directory.glob('*.json') if f != exclude_path),
             key=os.path.getmtime,
         )
         evicted_size = oldest_file.stat().st_size
@@ -94,22 +89,24 @@ class FileCache:
         )
 
     def get(self, key: str, default: Any = None) -> Any:
-        file_path = self._get_file_path(key)
-        if not file_path.exists():
+        path = self._get_file_path(key)
+        if not path.is_file():
             logger.debug(f'Get: Key not found: {key}')
             return default
-        with open(file_path, 'r') as f:
+
+        with open(path, 'r') as f:
             data = json.load(f)
-            os.utime(file_path, (time.time(), time.time()))  # Update access time
+            # Update access time
+            os.utime(path, (time.time(), time.time()))
             logger.debug(f'Get: Key found: {key}')
             return data['value']
 
     def delete(self, key: str) -> None:
-        file_path = self._get_file_path(key)
-        if file_path.exists():
-            deleted_size = file_path.stat().st_size
+        path = self._get_file_path(key)
+        if path.is_file():
+            deleted_size = path.stat().st_size
             self.current_size -= deleted_size
-            os.remove(file_path)
+            os.remove(path)
             logger.debug(
                 f'Deleted key: {key}, size: {deleted_size}, new current_size: {self.current_size}'
             )
@@ -122,7 +119,7 @@ class FileCache:
         logger.debug('Cache cleared')
 
     def __contains__(self, key: str) -> bool:
-        exists = self._get_file_path(key).exists()
+        exists = self._get_file_path(key).is_file()
         logger.debug(f'Contains check: {key}, result: {exists}')
         return exists
 
@@ -132,9 +129,9 @@ class FileCache:
         return length
 
     def __iter__(self):
-        for file in self.directory.glob('*.json'):
-            if file.is_file():
-                with open(file, 'r') as f:
+        for path in self.directory.glob('*.json'):
+            if path.is_file():
+                with open(path, 'r') as f:
                     data = json.load(f)
                     logger.debug(f"Yielding key: {data['key']}")
                     yield data['key']
