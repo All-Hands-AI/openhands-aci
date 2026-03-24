@@ -4628,4 +4628,4 @@ llama = ["llama-index", "llama-index-core", "llama-index-retrievers-bm25"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "2114026e74af3a25569f37be98dbda88e1598fd873a92d5503cc158998e14d01"
+content-hash = "fa409e3117a6a97dd79e9e6c5c07806849fcb050170c62157e6786bee54ae858"
