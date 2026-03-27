@@ -699,3 +699,12 @@ def test_str_replace_and_insert_snippet_output_on_a_large_file(editor):
         new_str='Inserted line at 500',
     )
     assert '   500\tInserted line at 500' in result.output
+
+
+def test_view_dense_chinese_markdown(tmp_path):
+    """view should handle UTF-8 markdown files with dense CJK content."""
+    md_file = tmp_path / 'test.md'
+    md_file.write_text('中文测试内容。' * 50, encoding='utf-8')
+    editor = OHEditor()
+    result = editor(command='view', path=str(md_file))
+    assert '中文测试内容' in result.output

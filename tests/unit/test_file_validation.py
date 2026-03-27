@@ -95,3 +95,11 @@ def test_validate_image_file():
         editor.validate_file(image_file)
 
     assert 'file appears to be binary' in str(exc_info.value).lower()
+
+
+def test_validate_dense_cjk_utf8_not_binary(tmp_path):
+    """Dense CJK UTF-8 text should not be rejected as binary."""
+    f = tmp_path / 'chinese.md'
+    f.write_text('中文测试内容。' * 50, encoding='utf-8')
+    editor = OHEditor()
+    editor.validate_file(f)  # Should not raise

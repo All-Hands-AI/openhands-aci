@@ -608,7 +608,18 @@ class OHEditor:
         if self.is_supported_binary_file(path):
             return
 
-        # Check file type
+        # Try encoding-based text detection first (handles CJK/multi-byte UTF-8)
+        try:
+            encoding = self._encoding_manager.get_encoding(path)
+            with open(path, 'r', encoding=encoding) as f:
+                chunk = f.read(8192)
+            # Null characters indicate binary content even if decoding succeeded
+            if '\x00' not in chunk:
+                return  # Successfully decoded as text — not binary
+        except (UnicodeDecodeError, ValueError, OSError, TypeError):
+            pass  # Fall through to binaryornot check
+
+        # Fallback to binaryornot
         if is_binary(str(path)):
             raise FileValidationError(
                 path=str(path),
