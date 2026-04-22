@@ -65,6 +65,36 @@ def test_validate_nonexistent_file():
     editor.validate_file(nonexistent)
 
 
+def test_validate_dense_cjk_text_file(tmp_path):
+    """Dense CJK UTF-8 files must not be rejected as binary.
+
+    Regression for https://github.com/OpenHands/OpenHands/issues/13517:
+    binaryornot / chardet flag UTF-8 text dense in multi-byte characters
+    as binary once the sample crosses ~1 KB, because the high-byte ratio
+    exceeds chardet's threshold.
+    """
+    editor = OHEditor()
+    cjk_file = tmp_path / 'dense_cjk.md'
+    cjk_file.write_text('中文测试内容。' * 50, encoding='utf-8')
+
+    # Confirm we are exercising the false-positive path (the file really is
+    # text but binaryornot classifies it as binary). If upstream ever fixes
+    # this, the second-chance check is still correct, just no longer needed.
+    assert is_binary(str(cjk_file))
+
+    # The editor should accept the file.
+    editor.validate_file(cjk_file)
+
+
+def test_validate_bom_utf16_text_file(tmp_path):
+    """UTF-16 text with BOM should also pass the second-chance check."""
+    editor = OHEditor()
+    utf16_file = tmp_path / 'notes_utf16.txt'
+    utf16_file.write_text('日本語と中文のメモ\n' * 100, encoding='utf-16')
+
+    editor.validate_file(utf16_file)
+
+
 def test_validate_pdf_file():
     """Test that PDF files are detected as binary."""
     editor = OHEditor()
