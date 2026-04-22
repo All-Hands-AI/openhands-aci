@@ -608,12 +608,36 @@ class OHEditor:
         if self.is_supported_binary_file(path):
             return
 
-        # Check file type
+        # Check file type. binaryornot leans on chardet byte heuristics and
+        # falsely flags UTF-8 files that are dense in non-ASCII text (CJK,
+        # Cyrillic, etc.) as binary once they're roughly >= 1 KB. Before
+        # rejecting the file, ask the encoding manager (which uses
+        # charset_normalizer and handles CJK correctly) whether we can
+        # decode it cleanly.
         if is_binary(str(path)):
-            raise FileValidationError(
-                path=str(path),
-                reason='File appears to be binary and this file type cannot be read or edited by this tool.',
-            )
+            if not self._looks_like_text(path):
+                raise FileValidationError(
+                    path=str(path),
+                    reason='File appears to be binary and this file type cannot be read or edited by this tool.',
+                )
+
+    def _looks_like_text(self, path: Path) -> bool:
+        """Return True if ``path`` can be decoded as text with the detected encoding.
+
+        Used as a second-chance check when binaryornot flags a file as binary,
+        to avoid the known false positive on UTF-8 text files dense in non-ASCII
+        characters (primarily CJK scripts).
+        """
+        try:
+            encoding = self._encoding_manager.detect_encoding(path)
+            # Decode a bounded sample rather than the whole file: 64 KB is
+            # more than enough to spot a binary payload but keeps the cost
+            # of a failed validation check small.
+            with open(path, encoding=encoding, errors='strict') as f:
+                f.read(64 * 1024)
+        except (UnicodeDecodeError, LookupError, OSError):
+            return False
+        return True
 
     @with_encoding
     def read_file(
